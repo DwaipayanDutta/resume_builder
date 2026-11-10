@@ -1,137 +1,70 @@
-Sanil Shankar
-Senior Project Manager [HW/SW Development & Operations]
-Bangalore, India 560100
-9900000000
-xxxxxxxx.18@gmail.com
-https://www.linkedin.com/in/
-https://bold.pro/my/
+Alex Morgan
+Senior Program Manager [Software Delivery & Operations]
+Springfield, USA 00000
++1 555 0100
+alex.morgan@example.com
+https://www.linkedin.com/in/alex-morgan-example
+https://example.com/alex-morgan
 
 WORK EXPERIENCE
 ================
 
-(Senior) Project Manager
-Infineon Technologies
-10/2023 - Present
-Bangalore, India
-- Manage strategic innovation projects worth over 4.0Mn EUR supporting enterprise-wide semiconductor verification modernization and process efficiency initiatives.
-- Led a complex program with six parallel work packages functioning as independent subprojects with global stakeholder alignment and milestone-based governance.
-- Influenced executive leadership and technical boards to approve strategic project expansion and additional AI/ML-enabled verification capabilities.
-- Developed KPI-driven project monitoring frameworks and executive dashboards that improved forecasting, governance visibility, and corrective action management.
-- Established global collaboration frameworks, communication governance, and virtual team operating models across multi-site engineering organizations.
-- Resolved complex vendor and sustaining organization escalations through executive stakeholder engagement, preventing schedule delays and protecting project ROI.
-- Drove methodology handover, organizational transition, and enterprise rollout, achieving stakeholder acceptance and sustaining organization ownership.
+Senior Program Manager
+Northwind Systems
+03/2022 - Present
+Springfield, USA
+- Manage a portfolio of six software programs worth over 3.5Mn USD supporting platform modernization across three business units.
+- Led a cross-functional program with five parallel work packages and milestone-based governance across global stakeholders.
+- Built KPI-driven dashboards that improved forecasting accuracy and corrective action tracking for executive reviews.
+- Resolved vendor escalations through executive engagement, protecting schedule and budget.
+- Introduced a lightweight change management process adopted by all program teams.
 
-Senior Project Manager
-Tavant
-08/2021 - 10/2023
-Bangalore, India
-- Delivered award-winning E2E Warranty Management solutions across Automotive, Building Construction and Farm Equipment industries.
-- Managed project PnL with Gross Margin at 30-35%, attrition under 15%, and Customer Satisfaction Score above 85%.
-- Directed changes to project scope and cost and implemented change management processes to keep projects on track.
-- Oversaw large portfolio of projects to support teams, report progress, and influence positive outcomes for key stakeholders.
-- Monitored contracts and SLAs to identify risks and implement mitigation actions to protect delivery from unforeseen delays and costs.
-- Recruited and oversaw personnel to achieve performance and quality targets.
+Project Manager
+Contoso Digital
+06/2017 - 02/2022
+Springfield, USA
+- Delivered enterprise web and mobile releases for retail and logistics clients with a customer satisfaction score above 85%.
+- Managed project budgets, contracts and SLAs, keeping gross margin at 30-35%.
+- Coached teams in Agile practices and facilitated sprint planning, reviews and retrospectives.
+- Recruited and mentored delivery staff, keeping attrition under 15%.
 
-IT Project Manager / Scrum Master
-Adobe (on contract for Tek Systems)
-07/2019 - 07/2021
-Bangalore, India
-- Led a 25-30 member team engaged in design, development, release management and maintenance of Adobe Professional Services and Platform Engineering.
-- Applied agile methodology to shorten cycle time and achieve target margins.
-- Managed large-scale product migration and complexities related to value stream gaps, conflicts, integrations and UAT readiness.
-- Coached teams in Agile practices and facilitated Scrum ceremonies including sprint planning, backlog grooming, daily scrums, reviews and retrospectives.
-- Served as Jira Admin and Coach for the team, using Slack, Teams and Jira to automate tasks and improve efficiency.
-- Demonstrated strong people management skills, gaining trust and reducing conflicts through empathy-led leadership.
-
-Project Management - Digital Marketing & Events
-Freelance
-10/2018 - 06/2019
-Bangalore, India
-- Strategy Project Consultant on mid to large digital marketing campaigns for Casa Piccosa, BHIVE and Sakkath Studios.
-- Responsible for project scheduling, milestone setting and toll gate meetings including engagement with Karnataka Election Commission to improve urban voting percentage.
-- Conducted data analysis and reporting to directors and end clients and documented learnings for in-house analysts.
-
-Senior Manager - Service Delivery Assurance
-Wipro Ltd.
-08/2016 - 09/2018
-Bangalore, Pune, Delhi, Dalian (China)
-- Led site-to-site transfer transition project for financial research process for a critical global media and information client, completing on hard deadline despite language and regional barriers.
-- Provided oversight to 80+ delivery accounts on Financial Discipline, Service Delivery, Risk and Compliance, People Practices and Delivery Transformation.
-- Developed a standard SDA scorecard for the Line of Business and started a monthly audit mechanism to check evidence of compliance.
-- Governed Revenue, OM%, Seat Utilization Index and Employee Band Mix for 80+ accounts.
-- Ensured all transition projects were governed with KPIs tracked, risks flagged early via RAID logs and mitigation plans, and milestones and critical paths managed with high precision.
-
-Senior Manager, Projects and Client Service
-Tata Consultancy Services
-06/2008 - 08/2016
-Bangalore, India
-- Managed delivery of analytical studies for top global FMCG giants across Europe, APIMEA, LATAM and North America for over 8 years with 100% track record.
-- Led transition and upsell/cross-sell initiatives targeting top FMCG clients in UK and US.
-- Served as Offshore Agile Team Project Manager to implement legacy migration of in-house BI tools for end client.
-- Introduced innovations including Process Risk Predictor, Mentorship Model, Process Quality Audit System, Knowledge Management Framework and Cross Flex Model.
-- Created fun@work teams, partnered with HR and managed yearly employee engagement programs.
-- Awarded Best Lean Six Sigma Project within TCS India and globally recognized at first place in PEX, IQPC Awards 2012 in Orlando, Florida, USA.
-
-Consultant - Business Analyst
-Symphony Marketing Solutions (Acquired by Genpact)
-09/2006 - 06/2008
-Bangalore, India
-- Supported clients with business analysis, documentation and data modeling.
-- Charted and reported market data for 30+ IRI UK clients across Grocery, Health & Beauty and OTC markets.
-- Worked on multiple OLAP tools including Oracle Sales Analyzer, Plus Suite and ATP.
-- Analyzed problematic areas to provide recommendations and solutions and managed multiple deadlines across several businesses.
-- Maintained database systems to track and analyze operational data.
+Business Analyst
+Fabrikam Consulting
+08/2012 - 05/2017
+Shelbyville, USA
+- Gathered requirements, documented processes and modeled data for financial services clients.
+- Reported monthly market and operations data to directors and end clients.
 
 PROFESSIONAL SUMMARY
 ====================
-Strategic and results-oriented Senior Project and Program Manager with 15+ years of experience leading complex cross-functional R&D, digital transformation and enterprise change initiatives. Proven success managing multimillion-euro technology programs for global organizations including Infineon, driving methodology modernization and delivering measurable ROI. Expertise in strategic planning, portfolio governance, stakeholder management and building high-performing global teams. IPMA Level C and PMI-ACP certified leader with a track record of influencing executive leadership and driving enterprise-wide adoption of engineering solutions.
+Senior Program Manager with 10+ years of experience leading cross-functional software delivery and digital transformation programs. Experienced in portfolio governance, stakeholder management and building high-performing distributed teams. PMP certified, with a record of influencing leadership decisions and driving adoption of new delivery practices.
 
 CORE COMPETENCIES
 =================
-- Agile Scrum Master
-- Project Scheduling
-- Chip/SoC/IP Design Projects
-- Cost/Budget Control
-- IT/SW Project Management
-- Risk Management
+- Program Management
+- Agile Scrum
 - Portfolio Governance
+- Budget Control
+- Risk Management
 - Stakeholder Management
 - Change Management
 - Vendor Management
-- KPI-Driven Performance Monitoring
-- Lean Six Sigma
+- KPI Reporting
 
 EDUCATION
 =========
-Bachelor of Engineering: Civil Transportation Engineering
-BMS College of Engineering, Bangalore | 1999 - 2004
+Bachelor of Science: Computer Science
+Example State University, Springfield | 2008 - 2012
 
 CERTIFICATIONS
 ==============
-IPMA Level C Certified Project Manager
-International Project Management Association (IPMA) | 2025 - 2030
+Project Management Professional (PMP)
+Project Management Institute (PMI) | 2020 - 2026
 
-PMI Agile Certified Practitioner (PMI-ACP)
-Project Management Institute (PMI) | 2021 - 10
-
-Professional Services Degree: Project Management
-Project Management Institute (PMI) | 2021 - 08
-
-Lean Six Sigma Green Belt/Black Belt
-Tata Consultancy Services | 2011
-
-Salesforce Admin
-Training Complete | 2022 - 09
-
-PMP and Agile - PM
-Training Completed | 2022 - 12
+Certified ScrumMaster (CSM)
+Scrum Alliance | 2018 - 2024
 
 KEY ACHIEVEMENTS
 ================
-- Pat on the Back Award in Adobe for optimizing process and improving SCRUM team experience via automated workflows, Power Apps and reusable templates.
-- Awarded Best Lean Six Sigma Project within TCS India and globally recognized at first place in PEX, IQPC Awards 2012 in Orlando, Florida, USA.
-- Product Manager and Innovator of I-KMS Integrated Knowledge Management System, an indigenous NLP-based smart knowledge and document management tool.
-
-INTERESTS
-=========
-Musician and Live Stage Performer, Member of Karnataka Artists Association (KAA)
+- Company Excellence Award for improving release predictability through automated reporting and reusable templates.
+- Introduced a delivery scorecard now used across all programs in the business unit.
