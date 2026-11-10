@@ -3,7 +3,8 @@
 Pipeline:
   1. Fill the bundled prompt template (prompt_template.txt) with the target role,
      company, job description and the current CV text.
-  2. Send it to a backend: local Qwen 2.5 3B (via Ollama) or the Claude API.
+  2. Send it to a backend: local Qwen 2.5 3B (via Ollama), the Claude API,
+     or any provider supported by LiteLLM (100+ LLMs).
   3. Clean the model's CV into the TXT layout create_resume.py expects.
   4. Build DOCX + PDF with create_resume.py (unchanged).
 
@@ -11,6 +12,8 @@ Usage:
     python -m resume_builder.tailor "New Resume.txt" --job-title "Senior Program Manager" \
         --company "Acme" --jd job.txt --backend qwen
     tailor-resume resume.txt --job-title "..." --jd job.txt --backend claude
+    tailor-resume resume.txt --job-title "..." --jd job.txt --backend litellm --model gpt-4o
+    tailor-resume resume.txt --job-title "..." --jd job.txt --backend litellm --model gemini/gemini-2.5-flash
 """
 from __future__ import annotations
 
@@ -114,6 +117,31 @@ def call_ollama(prompt: str, model: str, host: str, num_ctx: int) -> str:
     return data.get("message", {}).get("content", "")
 
 
+def call_litellm(prompt: str, model: str, api_key: str | None = None,
+                 api_base: str | None = None) -> str:
+    """Call any LLM provider via LiteLLM (pip install resume-builder[ai])."""
+    try:
+        import litellm  # noqa: F811 – optional dependency
+    except ImportError:
+        raise RuntimeError(
+            "The 'litellm' backend requires the litellm package.\n"
+            "Install it with:  pip install resume-builder[ai]\n"
+            "            or:   pip install litellm"
+        )
+    try:
+        kwargs: dict = {"model": model,
+                        "messages": [{"role": "user", "content": prompt}],
+                        "temperature": 0.2}
+        if api_key:
+            kwargs["api_key"] = api_key
+        if api_base:
+            kwargs["api_base"] = api_base
+        response = litellm.completion(**kwargs)
+        return response.choices[0].message.content or ""
+    except Exception as e:
+        raise RuntimeError(f"LiteLLM error with model '{model}': {e}")
+
+
 # --------------------------------------------------------------------------
 # Cleaning the model output into the create_resume TXT layout
 # --------------------------------------------------------------------------
@@ -192,17 +220,19 @@ def _jobs(txt_path):
 # --------------------------------------------------------------------------
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="tailor-resume",
-                                 description="Tailor a CV to a job with local Qwen or the Claude API, then build DOCX + PDF.")
+                                 description="Tailor a CV to a job with local Qwen, Claude API, or any LiteLLM-supported provider, then build DOCX + PDF.")
     ap.add_argument("resume", help="current CV .txt (same layout as examples/New Resume.txt)")
     ap.add_argument("--job-title", required=True, help="exact target job title")
     ap.add_argument("--company", default="", help="target company (optional)")
     jd = ap.add_mutually_exclusive_group(required=True)
     jd.add_argument("--jd", help="path to a .txt file containing the job description")
     jd.add_argument("--jd-text", help="job description pasted as text")
-    ap.add_argument("--backend", choices=["qwen", "claude"],
+    ap.add_argument("--backend", choices=["qwen", "claude", "litellm"],
                     default="claude" if os.environ.get("ANTHROPIC_API_KEY") else "qwen")
-    ap.add_argument("--model", help=f"default: {DEFAULT_QWEN} (qwen) or {DEFAULT_CLAUDE} (claude)")
-    ap.add_argument("--api-key", help="Anthropic API key (default: ANTHROPIC_API_KEY env var)")
+    ap.add_argument("--model", help=f"default: {DEFAULT_QWEN} (qwen) or {DEFAULT_CLAUDE} (claude); "
+                    "for litellm pass any supported model string, e.g. gpt-4o, gemini/gemini-2.5-flash")
+    ap.add_argument("--api-key", help="API key (default: provider-specific env var, e.g. ANTHROPIC_API_KEY, OPENAI_API_KEY)")
+    ap.add_argument("--api-base", help="custom API base URL (litellm backend only)")
     ap.add_argument("--ollama-host", default=os.environ.get("OLLAMA_HOST", "http://localhost:11434"))
     ap.add_argument("--num-ctx", type=int, default=12288, help="Ollama context window (default 12288)")
     ap.add_argument("--emphasis", default=DEFAULT_EMPHASIS, help="experience to emphasise (fills the prompt's choose/replace slot)")
@@ -226,6 +256,13 @@ def main(argv=None) -> int:
             sys.exit("Claude backend needs an API key: set ANTHROPIC_API_KEY or pass --api-key")
         model = args.model or DEFAULT_CLAUDE
         run = lambda p: call_claude(p, model, key)
+    elif args.backend == "litellm":
+        if not args.model:
+            sys.exit("The litellm backend requires --model, e.g. --model gpt-4o\n"
+                     "See https://docs.litellm.ai/docs/providers for supported model strings.")
+        model = args.model
+        key = args.api_key  # LiteLLM auto-reads provider env vars when None
+        run = lambda p: call_litellm(p, model, key, args.api_base)
     else:
         model = args.model or DEFAULT_QWEN
         run = lambda p: call_ollama(p, model, args.ollama_host, args.num_ctx)
@@ -254,7 +291,7 @@ def main(argv=None) -> int:
     header, main_blocks, side_blocks = cr.parse(txt_path)
     if not any(b[0] == "job" for b in main_blocks):
         sys.exit(f"ERROR: the model's CV did not follow the required layout (no job blocks found).\n"
-                 f"Raw output: {raw_path}\nTry again, edit {txt_path}, or use --backend claude.")
+                 f"Raw output: {raw_path}\nTry again, edit {txt_path}, or use --backend claude / --backend litellm.")
 
     # truthfulness guard: employers and dates must not change
     try:
