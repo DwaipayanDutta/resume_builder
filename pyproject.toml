@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "resume-builder"
+version = "0.1.0"
+description = "Build a 2-page Resume.docx and Resume.pdf from a plain TXT file"
+requires-python = ">=3.9"
+dependencies = ["python-docx", "reportlab", "pypdf"]
+
+[project.scripts]
+create-resume = "resume_builder.create_resume:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

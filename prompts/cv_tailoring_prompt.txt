@@ -1,0 +1,70 @@
+TASK:
+Tailor my CV for the following target role and job description. Do not invent experience, employers, dates, metrics, certifications, or technologies. Use only facts supported by my current CV or explicitly provided by me.
+
+TARGET ROLE:
+[PASTE EXACT JOB TITLE]
+
+COMPANY:
+[PASTE COMPANY NAME, IF APPLICABLE]
+
+JOB DESCRIPTION:
+[PASTE FULL JOB DESCRIPTION]
+
+MY CURRENT CV:
+[PASTE FULL CV TEXT]
+
+INSTRUCTIONS:
+
+1. ATS OPTIMIZATION
+- Produce a clean, single-column, ATS-friendly CV in plain text/Markdown.
+- Use standard section headings: Professional Summary, Core Competencies, Professional Experience, Education, Certifications, Selected Achievements.
+- Avoid tables, columns, text boxes, graphics, icons, skill-rating bars, headers/footers, and special characters.
+- Use reverse-chronological order.
+- Keep dates in a consistent format: MMM YYYY – MMM YYYY; use “Present” for current roles.
+- Use standard job titles and company names.
+- Incorporate exact keywords from the job description only where they are truthfully supported by my experience.
+- Do not keyword-stuff; prioritize natural, credible language.
+
+2. POSITIONING
+- Identify the primary job title I should use in the headline, based on the target role.
+- Create a tailored professional summary of 3–4 lines.
+- Emphasize the most relevant experience: [choose/replace with: technical program management / semiconductor R&D / digital transformation / enterprise delivery / product delivery / operations / client success].
+- Position me at the appropriate seniority level based on my actual experience.
+
+3. CONTENT IMPROVEMENT
+- Rewrite every experience bullet using strong action verbs.
+- Convert vague responsibilities into achievement-oriented statements.
+- Where metrics exist, retain them exactly and integrate them naturally.
+- Where metrics are missing, use this structure: “Led [action] across [scope] to deliver [business outcome], improving [metric] by [result].” If no metric is available, write “[ADD METRIC]” rather than fabricating one.
+- Remove repetition, filler phrases, unsupported claims, and irrelevant details.
+- Ensure each recent role has 4–6 concise bullets; older roles should have 2–3 bullets.
+- Preserve all material facts, employers, dates, tools, certifications, awards, and achievements.
+
+4. KEYWORD ALIGNMENT
+- Extract the top 20–30 ATS keywords from the job description.
+- Map each keyword to evidence in my CV.
+- Create a table with: Keyword | Job-description priority | Evidence in my CV | Recommended placement | Gap/action needed.
+- Flag any required qualification, tool, domain, or certification I do not clearly demonstrate.
+
+5. QUALITY CONTROL
+- Check for grammar, spelling, tense consistency, capitalization, and US/UK English consistency.
+- Use past tense for previous roles and present tense for my current role.
+- Ensure dates, titles, companies, locations, and achievements are internally consistent.
+- Identify any potential red flags, unclear claims, or formatting issues.
+- Recommend which older roles to shorten, merge, or remove for this specific application.
+
+6. DELIVERABLES
+Provide the following in this order:
+A. Executive assessment: top 5 strengths, top 5 gaps, and overall fit rating out of 10 for the target role.
+B. Keyword mapping table.
+C. Fully rewritten, ATS-friendly CV.
+D. A list of truthful questions I should answer to strengthen weak or missing metrics.
+E. A short LinkedIn “About” section aligned to the target role.
+F. Three tailored bullet variations for the most important requirement in the job description.
+
+CONSTRAINTS:
+- Do not fabricate achievements, metrics, tools, responsibilities, or credentials.
+- Do not change my employment dates or employers.
+- Do not use generic phrases such as “results-driven professional” unless they are supported by evidence.
+- Keep the final CV within two pages.
+- Use clear, concise, executive-level language.
