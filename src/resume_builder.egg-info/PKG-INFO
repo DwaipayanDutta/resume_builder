@@ -1,8 +1,0 @@
-Metadata-Version: 2.4
-Name: resume-builder
-Version: 0.1.0
-Summary: Build a 2-page Resume.docx and Resume.pdf from a plain TXT file
-Requires-Python: >=3.9
-Requires-Dist: python-docx
-Requires-Dist: reportlab
-Requires-Dist: pypdf

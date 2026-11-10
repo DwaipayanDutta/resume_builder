@@ -1,2 +1,0 @@
-[console_scripts]
-create-resume = resume_builder.create_resume:main

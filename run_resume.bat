@@ -1,134 +1,205 @@
 @echo off
 REM =====================================================================
-REM  run_resume.bat - build Resume.docx and Resume.pdf from a TXT file.
+REM  run_resume.bat - tailor a resume to a job and build Resume.docx/.pdf
 REM
-REM  Keep this .bat file in the resume_builder project folder (next to
-REM  pyproject.toml), then double-click it (or run it from cmd).
-REM
-REM  It will:
-REM    1. change to the folder containing this .bat file
-REM    2. check Python is available
-REM    3. install the required packages if they are missing
-REM    4. ask you for the TXT file path (drag-and-drop or paste)
-REM    5. run resume_builder --verify
-REM    6. pause so you can read the output
+REM  Keep this file inside the extracted resume_builder folder (next to
+REM  pyproject.toml) and double-click it. Do not run it from inside the zip.
+REM  The window stays open so any error message can be read.
+REM  Choices: 1 local Qwen 2.5 3B, 2 Claude API, 3 format only (no AI)
 REM =====================================================================
+if defined RB_CHILD goto :start
+set "RB_CHILD=1"
+cmd /k ""%~f0""
+exit /b
 
-setlocal EnableExtensions EnableDelayedExpansion
-
-REM --- 1. always work from the folder that contains this .bat -------------
+:start
+setlocal EnableExtensions
 cd /d "%~dp0"
 echo Working folder: %CD%
 echo.
 
-REM --- 2. locate Python ---------------------------------------------------
+echo [1/4] Looking for Python...
 set "PY="
 where py >nul 2>nul && set "PY=py -3"
-if not defined PY (
-    where python >nul 2>nul && set "PY=python"
-)
-if not defined PY (
-    echo [ERROR] Python was not found on PATH.
-    echo Install Python 3 from https://www.python.org/downloads/ and
-    echo make sure "Add python.exe to PATH" is ticked during install.
-    echo.
-    pause
-    exit /b 1
-)
+if not defined PY where python >nul 2>nul && set "PY=python"
+if defined PY goto :py_ok
+echo [ERROR] Python was not found on PATH.
+echo Install Python 3 from https://www.python.org/downloads/ and tick the Add python.exe to PATH box.
+goto :fail
+:py_ok
+echo Using: %PY%
 
-REM --- 3. make sure the resume_builder package is installed -------------
-%PY% -c "import resume_builder" >nul 2>nul
-if errorlevel 1 (
-    if not exist "pyproject.toml" (
-        echo [ERROR] pyproject.toml was not found in:
-        echo         %CD%
-        echo Put this .bat file in the resume_builder project folder.
-        echo.
-        pause
-        exit /b 1
-    )
-    echo Installing resume_builder package...
-    %PY% -m pip install --quiet --disable-pip-version-check .
-    if errorlevel 1 (
-        echo [ERROR] package install failed. Run manually:  %PY% -m pip install .
-        echo.
-        pause
-        exit /b 1
-    )
-)
+echo [2/4] Checking the resume_builder package...
+%PY% -c "import resume_builder, docx, reportlab, pypdf" >nul 2>nul
+if not errorlevel 1 goto :pkg_ok
+if exist "pyproject.toml" goto :pkg_install
+echo [ERROR] pyproject.toml was not found in this folder.
+echo Extract the whole zip first, then run this file from the extracted resume_builder folder.
+goto :fail
+:pkg_install
+echo Installing resume_builder and its libraries - first run only...
+%PY% -m pip install --disable-pip-version-check .
+if errorlevel 1 goto :pip_fail
+goto :pkg_ok
+:pip_fail
+echo [ERROR] Package install failed. Check your internet connection and the messages above.
+goto :fail
+:pkg_ok
 
-REM --- 4. verify / install dependencies ----------------------------------
-%PY% -c "import docx, reportlab, pypdf" >nul 2>nul
-if errorlevel 1 (
-    echo Installing required packages: python-docx reportlab pypdf
-    %PY% -m pip install --quiet --disable-pip-version-check python-docx reportlab pypdf
-    if errorlevel 1 (
-        echo [ERROR] pip install failed. Check your internet connection or
-        echo         run this manually:  %PY% -m pip install python-docx reportlab pypdf
-        echo.
-        pause
-        exit /b 1
-    )
-)
-
-REM --- 5. ask the user for the TXT file path -----------------------------
+:menu
 echo.
 echo ====================================================================
-echo  Enter the path to your resume TXT file.
-echo  You can drag-and-drop the file onto this window, or paste the path.
-echo  Press Enter with no input to use the default:
-echo      examples\New Resume.txt
+echo  How do you want to build your resume?
+echo    1. Tailor to a job with LOCAL Qwen 2.5 3B - free, private, offline
+echo    2. Tailor to a job with the CLAUDE API - better quality, needs a key
+echo    3. Format my TXT only - no AI
 echo ====================================================================
+set "CHOICE="
+set /p "CHOICE=Choose 1, 2 or 3: "
+if "%CHOICE%"=="1" goto :local
+if "%CHOICE%"=="2" goto :claude
+if "%CHOICE%"=="3" goto :plain
+echo Invalid choice.
+goto :menu
+
+:local
+set "BACKEND=qwen"
+echo [3/4] Setting up the local model...
+call :ensure_ollama
+if errorlevel 1 goto :fail
+goto :inputs
+
+:claude
+set "BACKEND=claude"
+if defined ANTHROPIC_API_KEY goto :inputs
 echo.
+echo Your key is used for this run only and is not saved to disk.
+set /p "ANTHROPIC_API_KEY=Paste your Anthropic API key: "
+if defined ANTHROPIC_API_KEY goto :inputs
+echo [ERROR] No API key entered.
+goto :fail
+
+:plain
+set "BACKEND="
+goto :inputs
+
+:inputs
+echo.
+echo Enter the path to your resume TXT file - drag and drop works.
+echo Press Enter for the default: examples\New Resume.txt
 set "TXT="
 set /p "TXT=Resume TXT file: "
-
-REM strip surrounding double quotes if the user pasted a quoted path
 if defined TXT set "TXT=%TXT:"=%"
-
 if not defined TXT set "TXT=examples\New Resume.txt"
+if exist "%TXT%" goto :txt_ok
+echo [ERROR] File not found: "%TXT%"
+goto :fail
+:txt_ok
 
-if not exist "%TXT%" (
-    echo.
-    echo [ERROR] File not found: "%TXT%"
-    echo.
-    pause
-    exit /b 1
-)
+set "JOB="
+set "COMPANY="
+set "JD="
+if not defined BACKEND goto :outputs
+echo.
+set /p "JOB=Target job title: "
+if defined JOB set "JOB=%JOB:"=%"
+if defined JOB goto :job_ok
+echo [ERROR] A job title is required.
+goto :fail
+:job_ok
+set /p "COMPANY=Company - optional: "
+if defined COMPANY set "COMPANY=%COMPANY:"=%"
+echo.
+echo Save the job description in a .txt file, then give its path.
+set /p "JD=Job description TXT file: "
+if defined JD set "JD=%JD:"=%"
+if exist "%JD%" goto :outputs
+echo [ERROR] Job description file not found: "%JD%"
+goto :fail
 
-REM --- 6. optional output folder (defaults to this folder) ---------------
+:outputs
 echo.
 set "OUTDIR="
-set /p "OUTDIR=Output folder [Enter for current folder]: "
+set /p "OUTDIR=Output folder - Enter for current folder: "
 if defined OUTDIR set "OUTDIR=%OUTDIR:"=%"
 if not defined OUTDIR set "OUTDIR=."
-
-REM --- 7. optional output basename ---------------------------------------
-echo.
 set "BASENAME="
-set /p "BASENAME=Output file name without extension [Enter for Resume]: "
+set /p "BASENAME=Output file name without extension - Enter for Resume: "
 if not defined BASENAME set "BASENAME=Resume"
 
-REM --- 8. run the generator with --verify --------------------------------
 echo.
+echo [4/4] Building. Local models can take several minutes, please wait...
 echo --------------------------------------------------------------------
-echo  Running:  %PY% -m resume_builder "%TXT%" -o "%OUTDIR%" --basename "%BASENAME%" --verify
-echo --------------------------------------------------------------------
-echo.
+if not defined BACKEND goto :run_plain
+%PY% -m resume_builder.tailor "%TXT%" --job-title "%JOB%" --company "%COMPANY%" --jd "%JD%" --backend %BACKEND% -o "%OUTDIR%" --basename "%BASENAME%" --verify
+set "RC=%ERRORLEVEL%"
+goto :finish
+:run_plain
 %PY% -m resume_builder "%TXT%" -o "%OUTDIR%" --basename "%BASENAME%" --verify
 set "RC=%ERRORLEVEL%"
 
+:finish
 echo.
-if "%RC%"=="0" (
-    echo [DONE] Resume built successfully.
-    echo        Look for "%BASENAME%.docx" and "%BASENAME%.pdf" in:
-    echo        %OUTDIR%
-) else (
-    echo [FAILED] resume_builder exited with code %RC%.
-    echo          Read the messages above for details.
-)
-
+if not "%RC%"=="0" goto :build_failed
+echo [DONE] Look for %BASENAME%.docx and %BASENAME%.pdf in: %OUTDIR%
 echo.
 pause
-endlocal
-exit /b %RC%
+exit
+:build_failed
+echo [FAILED] Exit code %RC%. Read the messages above.
+goto :fail
+
+:fail
+echo.
+echo The window was left open so you can read the messages above.
+pause
+exit /b 1
+
+REM =====================================================================
+REM  Subroutine: install Ollama with winget and download Qwen 2.5 3B
+REM =====================================================================
+:ensure_ollama
+set "OLLAMA="
+where ollama >nul 2>nul && set "OLLAMA=ollama"
+if not defined OLLAMA if exist "%LOCALAPPDATA%\Programs\Ollama\ollama.exe" set "OLLAMA=%LOCALAPPDATA%\Programs\Ollama\ollama.exe"
+if defined OLLAMA goto :have_ollama
+echo Ollama is not installed. Installing it with winget...
+where winget >nul 2>nul
+if errorlevel 1 goto :manual_ollama
+winget install -e --id Ollama.Ollama --accept-package-agreements --accept-source-agreements
+if exist "%LOCALAPPDATA%\Programs\Ollama\ollama.exe" set "OLLAMA=%LOCALAPPDATA%\Programs\Ollama\ollama.exe"
+if not defined OLLAMA where ollama >nul 2>nul && set "OLLAMA=ollama"
+if defined OLLAMA goto :have_ollama
+:manual_ollama
+echo [ERROR] Could not install Ollama automatically.
+echo Install it from https://ollama.com/download then run this file again.
+exit /b 1
+
+:have_ollama
+"%OLLAMA%" list >nul 2>nul
+if not errorlevel 1 goto :ollama_up
+echo Starting the Ollama server...
+start "Ollama server" /min "%OLLAMA%" serve
+set /a TRIES=0
+:wait_ollama
+timeout /t 2 /nobreak >nul
+"%OLLAMA%" list >nul 2>nul
+if not errorlevel 1 goto :ollama_up
+set /a TRIES+=1
+if %TRIES% LSS 20 goto :wait_ollama
+echo [ERROR] The Ollama server did not start.
+exit /b 1
+
+:ollama_up
+"%OLLAMA%" list | findstr /i /c:"qwen2.5:3b" >nul
+if not errorlevel 1 goto :model_ready
+echo Downloading Qwen 2.5 3B - about 2 GB, one time only...
+"%OLLAMA%" pull qwen2.5:3b
+if errorlevel 1 goto :pull_failed
+goto :model_ready
+:pull_failed
+echo [ERROR] Model download failed. Check your internet connection.
+exit /b 1
+:model_ready
+echo Local model ready: qwen2.5:3b
+exit /b 0
