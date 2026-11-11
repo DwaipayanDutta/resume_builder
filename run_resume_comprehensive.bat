@@ -5,7 +5,7 @@ REM
 REM  Keep this file inside the extracted resume_builder folder (next to
 REM  pyproject.toml) and double-click it. Do not run it from inside the zip.
 REM  The window stays open so any error message can be read.
-REM  Choices: 1 local Qwen 2.5 3B, 2 Claude API, 3 format only (no AI)
+REM  Choices: 1 local Qwen 2.5 3B, 2 Claude API, 3 any provider, 4 format only
 REM =====================================================================
 if defined RB_CHILD goto :start
 set "RB_CHILD=1"
@@ -58,8 +58,8 @@ echo   :*%%= ####*       ....:*:......  Get started
 echo   =####%%==+++-       +#####*.
 echo    :*####%%=          =%%####+.   ^> 1. tailor-resume (Local Qwen 2.5 3B)
 echo     .*####%%=          =%%####+.     2. tailor-resume (Claude API)
-echo      .*###*.       .####-=%%####*.    3. create-resume (Format TXT only)
-echo   ....:=%%+:::..   .####:  =%%###-
+echo      .*###*.       .####-=%%####*.    3. tailor-resume (Any Provider - Gemini, OpenAI, Groq, ...)
+echo   ....:=%%+:::..   .####:  =%%###-      4. create-resume (Format TXT only)
 echo   ############# .*##-.####:   +-
 echo   %%%%%%%%%%%%%.*####=####:
 echo            .*####%%= .####:
@@ -70,12 +70,13 @@ echo      view all commands
 echo.
 
 REM Using 'choice' for instant selection without pressing Enter
-choice /c 123 /n /m "^> Select an option (1, 2 or 3): "
+choice /c 1234 /n /m "^> Select an option (1, 2, 3 or 4): "
 set "CHOICE=%ERRORLEVEL%"
 
 if "%CHOICE%"=="1" goto :local
 if "%CHOICE%"=="2" goto :claude
-if "%CHOICE%"=="3" goto :plain
+if "%CHOICE%"=="3" goto :litellm
+if "%CHOICE%"=="4" goto :plain
 echo Invalid choice.
 goto :menu
 
@@ -95,6 +96,94 @@ set /p "ANTHROPIC_API_KEY=^> Paste your Anthropic API key: "
 if defined ANTHROPIC_API_KEY goto :inputs
 echo [ERROR] No API key entered.
 goto :fail
+
+:litellm
+set "BACKEND=litellm"
+echo.
+echo ====================================================================
+echo LiteLLM works with 100+ providers. Enter your credentials as
+echo   provider:key
+echo Examples:
+echo   gemini:AIzaSy...
+echo   openai:sk-...
+echo   anthropic:sk-ant-...
+echo   groq:gsk_...
+echo   mistral:...
+echo   openrouter:sk-or-...
+echo ====================================================================
+set "LLM_CRED="
+set /p "LLM_CRED=^> provider:key: "
+if not defined LLM_CRED (
+    echo [ERROR] No credentials entered.
+    goto :fail
+)
+set "PROVIDER="
+set "APIKEY="
+for /f "tokens=1,* delims=:" %%a in ("%LLM_CRED%") do (
+    set "PROVIDER=%%a"
+    set "APIKEY=%%b"
+)
+set "PROVIDER=%PROVIDER: =%"
+for /f "tokens=* delims= " %%k in ("%APIKEY%") do set "APIKEY=%%k"
+if not defined PROVIDER (
+    echo [ERROR] Provider name is missing. Use provider:key
+    goto :fail
+)
+if not defined APIKEY (
+    echo [ERROR] API key is empty. Use provider:key
+    goto :fail
+)
+call :map_provider_env
+if not defined PROVIDER_ENV goto :unknown_provider
+call set "%PROVIDER_ENV%=%APIKEY%"
+echo Credentials accepted for provider: %PROVIDER% (env: %PROVIDER_ENV%)
+goto :ask_model
+
+:unknown_provider
+echo [ERROR] Unknown provider: %PROVIDER%
+echo Supported providers:
+echo   openai  anthropic/claude  gemini/google  groq   mistral
+echo   cohere  openrouter         together       deepseek xai
+echo   azure   fireworks          perplexity     huggingface replicate
+echo To add another provider, edit the :map_provider_env block in this file.
+goto :fail
+
+:map_provider_env
+set "PROVIDER_ENV="
+if /i "%PROVIDER%"=="openai"       set "PROVIDER_ENV=OPENAI_API_KEY"
+if /i "%PROVIDER%"=="anthropic"    set "PROVIDER_ENV=ANTHROPIC_API_KEY"
+if /i "%PROVIDER%"=="claude"       set "PROVIDER_ENV=ANTHROPIC_API_KEY"
+if /i "%PROVIDER%"=="gemini"       set "PROVIDER_ENV=GEMINI_API_KEY"
+if /i "%PROVIDER%"=="google"       set "PROVIDER_ENV=GEMINI_API_KEY"
+if /i "%PROVIDER%"=="groq"         set "PROVIDER_ENV=GROQ_API_KEY"
+if /i "%PROVIDER%"=="mistral"      set "PROVIDER_ENV=MISTRAL_API_KEY"
+if /i "%PROVIDER%"=="cohere"       set "PROVIDER_ENV=COHERE_API_KEY"
+if /i "%PROVIDER%"=="openrouter"   set "PROVIDER_ENV=OPENROUTER_API_KEY"
+if /i "%PROVIDER%"=="together"     set "PROVIDER_ENV=TOGETHER_API_KEY"
+if /i "%PROVIDER%"=="deepseek"     set "PROVIDER_ENV=DEEPSEEK_API_KEY"
+if /i "%PROVIDER%"=="xai"          set "PROVIDER_ENV=XAI_API_KEY"
+if /i "%PROVIDER%"=="azure"        set "PROVIDER_ENV=AZURE_API_KEY"
+if /i "%PROVIDER%"=="fireworks"    set "PROVIDER_ENV=FIREWORKS_API_KEY"
+if /i "%PROVIDER%"=="perplexity"   set "PROVIDER_ENV=PERPLEXITY_API_KEY"
+if /i "%PROVIDER%"=="huggingface"  set "PROVIDER_ENV=HUGGINGFACE_API_KEY"
+if /i "%PROVIDER%"=="replicate"    set "PROVIDER_ENV=REPLICATE_API_KEY"
+exit /b
+
+:ask_model
+echo.
+echo Enter the LiteLLM model string. The provider prefix must match.
+echo   Gemini   -^> gemini/gemini-2.5-flash
+echo   OpenAI   -^> openai/gpt-4o
+echo   Anthropic-^> anthropic/claude-3-5-sonnet-20241022
+echo   Groq     -^> groq/llama-3.3-70b-versatile
+set "MODEL="
+set /p "MODEL=^> Model: "
+if not defined MODEL (
+    echo [ERROR] A model string is required.
+    goto :fail
+)
+set "MODEL_ARG=--model "%MODEL%""
+goto :inputs
 
 :plain
 set "BACKEND="
@@ -148,7 +237,7 @@ echo.
 echo [4/4] Building. Local models can take several minutes, please wait...
 echo --------------------------------------------------------------------
 if not defined BACKEND goto :run_plain
-%PY% -m resume_builder.tailor "%TXT%" --job-title "%JOB%" --company "%COMPANY%" --jd "%JD%" --backend %BACKEND% -o "%OUTDIR%" --basename "%BASENAME%" --verify
+%PY% -m resume_builder.tailor "%TXT%" --job-title "%JOB%" --company "%COMPANY%" --jd "%JD%" --backend %BACKEND% %MODEL_ARG% -o "%OUTDIR%" --basename "%BASENAME%" --verify
 set "RC=%ERRORLEVEL%"
 goto :finish
 :run_plain
