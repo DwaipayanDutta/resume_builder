@@ -14,7 +14,9 @@
 [![License](https://img.shields.io/github/license/DwaipayanDutta/resume_builder)](LICENSE)
 
 [Quick start](#-windows--the-easiest-way) •
+[How it works](#-how-it-works) •
 [CLI](#-command-line) •
+[Input format](#-prepare-your-inputs) •
 [Outputs](#-output-files) •
 [Layout](#-repo-layout) •
 [Troubleshooting](#-troubleshooting)
@@ -35,6 +37,20 @@ Mistral, Bedrock, …) plus built-in **Ollama** and **Claude** backends.
 | 🎯 Tailored | 🔒 Private | 🌐 Flexible | 📄 Polished |
 |:-----------:|:----------:|:-----------:|:-----------:|
 | Matches your resume to the job description | Run fully offline with a local model | 100+ LLM providers | 2-page DOCX + PDF output |
+
+### 🔄 How it works
+
+1. Provide a structured plain-text resume and the target job description.
+2. Choose local Qwen, Claude, or a provider supported by LiteLLM to tailor the content.
+3. Review the tailored text and fit report; employer and date differences are flagged.
+4. Export the resume as DOCX and PDF, with optional output verification.
+
+| Backend | Internet needed | API key | Data processing |
+|---------|:---------------:|:-------:|-----------------|
+| 🧠 **Qwen via Ollama** | Model download only | No | Local after setup |
+| 🤖 **Claude** | Yes | Anthropic key | Sent to Anthropic's API |
+| 🌐 **LiteLLM provider** | Usually | Provider-dependent | Sent to the selected provider |
+| 📝 **Format only** | No | No | Local |
 
 ---
 
@@ -175,6 +191,26 @@ supported model string.
 
 ---
 
+## 🗂️ Prepare your inputs
+
+### Resume
+
+Use a `.txt` resume with the same structure as [`examples/New Resume.txt`](examples/New%20Resume.txt):
+
+- Put your name and headline on the first two lines, followed by contact details.
+- Give each section an uppercase heading followed by a line of `=` characters.
+- Keep each work-history entry in the order: job title, company, `MM/YYYY - MM/YYYY` (or `MM/YYYY - Present`), location, then bullets.
+- Keep the original employers and dates accurate. The tool warns about detected differences, but you should still review the result manually.
+
+### Job description
+
+Pass the job description as a plain-text file with `--jd`, or provide its text with `--jd-text`.
+Include the responsibilities and qualifications you want the tailoring step to consider.
+
+> 🔐 Use sample or anonymized personal information in public examples. Keep generated resumes and reports out of version control.
+
+---
+
 ## 📦 Output files
 
 | File | Description |
@@ -190,6 +226,17 @@ supported model string.
 - 📐 **Layout** — your input TXT must use the same layout as `examples/New Resume.txt`.
 - 🕵️ **Employer / date mismatches** — the tool flags any employer or date that differs from your original.
 - ✏️ **`[ADD METRIC]` placeholders** — the tool leaves these where you should add a concrete number. Fill them in before sending the resume out.
+
+---
+
+## 🛡️ Privacy and responsible use
+
+- **Local mode:** With Ollama, resume and job-description content is processed by the local model after the model has been downloaded.
+- **Cloud modes:** Claude and LiteLLM send the prompt, including resume and job-description text, to the selected API provider. Review that provider's data-handling terms before use.
+- **API keys:** The Windows launcher accepts keys for the current run. When using the CLI, prefer environment variables or `--api-key`; do not commit keys to source control.
+- **Review every result:** Automated checks can flag certain employer/date changes and metric placeholders, but cannot guarantee the truth or quality of generated content. Confirm all facts, dates, credentials, and metrics before using a resume.
+
+This tool assists with tailoring and document generation; it does not guarantee ATS compatibility, interviews, or employment outcomes.
 
 ---
 
@@ -223,6 +270,16 @@ resume_builder/
 | Ollama model download fails | Check your internet connection; retry. The model is ~2 GB and only downloads once. |
 | `Unknown provider` error | Use one of the names in the provider table, or add it in `:map_provider_env` inside the `.bat`. |
 | LiteLLM says "missing API key" | Make sure the `provider:` prefix you typed matches the `--model` prefix (e.g. `gemini:` → `gemini/…`). |
+
+---
+
+## 🤝 Contributing
+
+Contributions and bug reports are welcome. For larger changes, open an issue first to discuss the approach, then submit a pull request with a concise description of the change.
+
+## 🚨 Security
+
+Please do not report security or secret-handling concerns in a public issue. Contact the repository maintainer privately.
 
 ---
 
