@@ -1,114 +1,116 @@
+import { useEffect, useState, useRef } from "react";
 import { useResumeStore } from "../store";
+
+export interface PreviewData {
+  html: string;
+  pages: number;
+}
 
 export function LivePreview() {
   const resume = useResumeStore((s) => s.resume);
   const isLoaded = useResumeStore((s) => s.isLoaded);
 
-  if (!isLoaded || !resume) {
+  const [html, setHtml] = useState<string>("");
+  const [pages, setPages] = useState<number>(1);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (!isLoaded || !resume) return;
+
+    // Cancel any in-flight request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const currentReqId = ++requestIdRef.current;
+
+    setLoading(true);
+    setError(null);
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch("/api/render/preview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(resume),
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`Preview failed (${res.status}): ${errText}`);
+        }
+
+        const data: PreviewData = await res.json();
+
+        // Ensure latest edit wins
+        if (currentReqId === requestIdRef.current) {
+          setHtml(data.html);
+          setPages(data.pages);
+          setLoading(false);
+          setError(null);
+        }
+      } catch (err: unknown) {
+        if (err instanceof DOMException && err.name === "AbortError") {
+          // Stale request cancelled; ignore
+          return;
+        }
+        if (currentReqId === requestIdRef.current) {
+          setError(err instanceof Error ? err.message : String(err));
+          setLoading(false);
+        }
+      }
+    }, 300); // 300ms debounce
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [resume, isLoaded]);
+
+  if (!isLoaded) {
     return (
-      <div className="preview-sheet empty">
+      <div className="preview-container">
         <p className="loading-text">Loading preview...</p>
       </div>
     );
   }
 
-  const renderSection = (key: string) => {
-    switch (key) {
-      case "summary":
-        return resume.summary && resume.summary.value.trim() ? (
-          <section key={key} className="preview-section">
-            <h2>Professional Summary</h2>
-            <p className={resume.summary.verification_status === "flagged" ? "flag" : ""}>
-              {resume.summary.value}
-            </p>
-          </section>
-        ) : null;
-
-      case "experience":
-        return resume.experience && resume.experience.length ? (
-          <section key={key} className="preview-section">
-            <h2>Work Experience</h2>
-            {resume.experience
-              .filter((e) => e.included)
-              .map((e, i) => (
-                <div key={i} className="preview-entry">
-                  <div className="preview-head">
-                    <strong>{e.title.value || "Untitled Role"}</strong>
-                    <span>
-                      {e.start_date.value} – {e.end_date.value}
-                    </span>
-                  </div>
-                  {e.company.value && <div className="muted">{e.company.value}</div>}
-                  <ul>
-                    {e.bullets.map((b, j) => (
-                      <li
-                        key={j}
-                        className={b.verification_status === "flagged" ? "flag" : ""}
-                      >
-                        {b.value}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-          </section>
-        ) : null;
-
-      case "education":
-        return resume.education && resume.education.length ? (
-          <section key={key} className="preview-section">
-            <h2>Education</h2>
-            {resume.education
-              .filter((ed) => ed.included)
-              .map((ed, i) => (
-                <div key={i} className="preview-entry">
-                  <strong>{ed.degree.value}</strong> — {ed.institution.value}
-                </div>
-              ))}
-          </section>
-        ) : null;
-
-      case "skills":
-        return resume.skills && resume.skills.length ? (
-          <section key={key} className="preview-section">
-            <h2>Skills</h2>
-            <p>
-              {resume.skills
-                .map((s) => s.value)
-                .filter(Boolean)
-                .join(" · ")}
-            </p>
-          </section>
-        ) : null;
-
-      default:
-        return null;
-    }
-  };
-
   return (
     <div className="preview-container">
       <div className="preview-header-bar">
-        <span>A4 Format Preview</span>
-      </div>
-      <div className="preview-sheet">
-        <h1 className="preview-name">{resume.contact.name.value || "Your Name"}</h1>
-        <div className="preview-contact">
-          {[
-            resume.contact.email,
-            resume.contact.phone,
-            resume.contact.location,
-            resume.contact.linkedin,
-          ]
-            .filter((f) => Boolean(f?.value))
-            .map((f, i) => (
-              <span key={i} className="contact-item">
-                {f!.value}
-              </span>
-            ))}
+        <div className="preview-header-left">
+          <span className="preview-title">Live Preview (A4)</span>
+          {loading && <span className="preview-badge rendering">Rendering...</span>}
         </div>
-        {resume.section_order.map(renderSection)}
+        <div className="preview-header-right">
+          <span className={`page-count-badge ${pages > 2 ? "badge-danger" : "badge-info"}`}>
+            {pages} {pages === 1 ? "page" : "pages"}
+          </span>
+        </div>
       </div>
+
+      {error ? (
+        <div className="preview-error-card">
+          <h4>Preview Error</h4>
+          <p>{error}</p>
+        </div>
+      ) : (
+        <div className="preview-frame-wrapper">
+          <iframe
+            title="Resume Live Preview"
+            srcDoc={html}
+            sandbox="allow-same-origin"
+            className="preview-iframe"
+          />
+        </div>
+      )}
     </div>
   );
 }
