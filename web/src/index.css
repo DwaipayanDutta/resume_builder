@@ -673,3 +673,207 @@ input:focus, textarea:focus {
   margin-top: 6px;
 }
 
+/* ATS Checklist & Keyword Match Card */
+.ats-card {
+  max-width: 720px;
+  margin: 0 auto 20px auto;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.ats-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ats-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ats-header-title h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.heuristic-tag {
+  font-size: 0.7rem;
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.btn-toggle-expand {
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.ats-card-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.heuristic-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #166534;
+}
+
+.notice-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.ats-jd-group {
+  margin-bottom: 0;
+}
+
+.ats-jd-textarea {
+  font-size: 0.85rem;
+}
+
+.ats-checklist-section h5,
+.ats-keywords-section h5 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 8px;
+}
+
+.ats-checklist {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+}
+
+.checklist-item.item-ok {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #dcfce7;
+}
+
+.checklist-item.item-warn {
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fef3c7;
+}
+
+.checklist-item.item-info {
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.checklist-icon {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.checklist-details strong {
+  font-weight: 600;
+}
+
+.placeholder-tags {
+  font-weight: 600;
+  color: #b91c1c;
+}
+
+.keywords-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.filter-label {
+  font-size: 0.78rem;
+  cursor: pointer;
+  color: #64748b;
+}
+
+.empty-keywords-hint {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.keywords-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.keyword-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 14px;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.keyword-matched {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.keyword-missing {
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.keyword-critical {
+  font-weight: 600;
+  border-color: #fca5a5;
+}
+
+.critical-badge {
+  font-size: 0.65rem;
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 1px 4px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  margin-left: 2px;
+}
+
+

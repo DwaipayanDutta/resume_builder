@@ -2,6 +2,7 @@ import { useState } from "react";
 import { SectionNavigator } from "./SectionNavigator";
 import { SectionForm } from "./SectionForm";
 import { LivePreview } from "./LivePreview";
+import { AtsChecklistCard } from "./AtsChecklistCard";
 import { useResumeStore } from "../store";
 import { ExportDialog } from "./ExportDialog";
 
@@ -84,6 +85,7 @@ export function EditorLayout() {
         </aside>
 
         <main className="panel-center">
+          <AtsChecklistCard />
           <SectionForm />
         </main>
 
