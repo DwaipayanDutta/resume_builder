@@ -1,0 +1,98 @@
+import { useState } from "react";
+import { SectionNavigator } from "./SectionNavigator";
+import { SectionForm } from "./SectionForm";
+import { LivePreview } from "./LivePreview";
+import { useResumeStore } from "../store";
+import { ExportDialog } from "./ExportDialog";
+
+export function EditorLayout() {
+  const isLoaded = useResumeStore((s) => s.isLoaded);
+  const undo = useResumeStore((s) => s.undo);
+  const redo = useResumeStore((s) => s.redo);
+  const pastCount = useResumeStore((s) => s.past.length);
+  const futureCount = useResumeStore((s) => s.future.length);
+  const status = useResumeStore((s) => s.autoSaveStatus);
+  const resetResume = useResumeStore((s) => s.resetResume);
+  const [exporting, setExporting] = useState(false);
+
+  if (!isLoaded) {
+    return (
+      <div className="editor-loading">
+        <h2>Loading Resume...</h2>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => resetResume()}
+        >
+          Create New Resume
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="editor-root">
+      <header className="editor-toolbar">
+        <div className="toolbar-left">
+          <span className="app-brand">Resume Builder</span>
+          <div className="history-buttons">
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost"
+              onClick={undo}
+              disabled={pastCount === 0}
+              title="Undo last change"
+            >
+              ↶ Undo
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost"
+              onClick={redo}
+              disabled={futureCount === 0}
+              title="Redo last change"
+            >
+              ↷ Redo
+            </button>
+          </div>
+        </div>
+
+        <div className="toolbar-center">
+          <span className={`save-status ${status}`}>
+            {status === "saved"
+              ? "● All changes saved"
+              : status === "saving"
+              ? "○ Saving..."
+              : "● Unsaved edits"}
+          </span>
+        </div>
+
+        <div className="toolbar-right">
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => setExporting(true)}
+          >
+            Export Resume
+          </button>
+        </div>
+      </header>
+
+      <div className="editor-panels">
+        <aside className="panel-left">
+          <SectionNavigator />
+        </aside>
+
+        <main className="panel-center">
+          <SectionForm />
+        </main>
+
+        <aside className="panel-right">
+          <LivePreview />
+        </aside>
+      </div>
+
+      {exporting && <ExportDialog onClose={() => setExporting(false)} />}
+    </div>
+  );
+}

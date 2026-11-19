@@ -20,3 +20,7 @@ out/
 All_files/
 All_files.zip
 
+# Node / Frontend
+web/node_modules/
+web/dist/
+
