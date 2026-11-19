@@ -12,6 +12,28 @@ dependencies = ["python-docx", "reportlab", "pypdf"]
 
 [project.optional-dependencies]
 ai = ["litellm>=1.0.0"]
+web = [
+    "fastapi>=0.100.0",
+    "uvicorn>=0.20.0",
+    "jinja2>=3.1.0",
+    "httpx>=0.24.0",
+    "mammoth>=1.8.0",
+    "weasyprint>=60.0",
+    "python-multipart>=0.0.9",
+]
+all = [
+    "litellm>=1.0.0",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.20.0",
+    "jinja2>=3.1.0",
+    "httpx>=0.24.0",
+    "mammoth>=1.8.0",
+    "weasyprint>=60.0",
+    "python-multipart>=0.0.9",
+]
+test = [
+    "pytest>=7.0.0",
+]
 
 [project.scripts]
 create-resume = "resume_builder.create_resume:main"
@@ -21,4 +43,4 @@ tailor-resume = "resume_builder.tailor:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-resume_builder = ["prompt_template.txt"]
+resume_builder = ["prompt_template.txt", "rendering/templates/*.html"]
