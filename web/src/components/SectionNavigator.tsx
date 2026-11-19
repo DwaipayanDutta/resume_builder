@@ -13,20 +13,21 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useResumeStore } from "../store";
 
-const LABELS: Record<string, string> = {
-  contact: "Contact Info",
-  summary: "Professional Summary",
-  experience: "Work Experience",
-  projects: "Projects",
-  education: "Education",
-  skills: "Skills",
-  certifications: "Certifications",
+const LABELS: Record<string, { label: string; icon: string }> = {
+  contact: { label: "Contact Info", icon: "👤" },
+  summary: { label: "Professional Summary", icon: "📄" },
+  experience: { label: "Work Experience", icon: "💼" },
+  projects: { label: "Projects", icon: "🚀" },
+  education: { label: "Education", icon: "🎓" },
+  skills: { label: "Skills", icon: "⚡" },
+  certifications: { label: "Certifications", icon: "📜" },
 };
 
 function SortableSection({ id, active }: { id: string; active: boolean }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id });
   const select = useResumeStore((s) => s.selectSection);
+  const info = LABELS[id] ?? { label: id, icon: "📌" };
 
   return (
     <div
@@ -34,7 +35,7 @@ function SortableSection({ id, active }: { id: string; active: boolean }) {
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
-        opacity: isDragging ? 0.5 : 1,
+        opacity: isDragging ? 0.4 : 1,
       }}
       className={`section-card ${active ? "active" : ""}`}
       onClick={() => select(id)}
@@ -44,11 +45,12 @@ function SortableSection({ id, active }: { id: string; active: boolean }) {
         className="drag-handle"
         {...attributes}
         {...listeners}
-        aria-label={`Drag to reorder ${LABELS[id] ?? id}`}
+        aria-label={`Drag to reorder ${info.label}`}
       >
         ⋮⋮
       </button>
-      <span className="section-title">{LABELS[id] ?? id}</span>
+      <span className="section-icon">{info.icon}</span>
+      <span className="section-title">{info.label}</span>
     </div>
   );
 }
@@ -64,14 +66,18 @@ export function SectionNavigator() {
 
   return (
     <div className="section-navigator">
-      <h4>Sections</h4>
+      <div className="nav-header">
+        <span className="nav-heading">SECTIONS</span>
+      </div>
+
       <div
         className={`section-card fixed-section ${
           selected === "contact" ? "active" : ""
         }`}
         onClick={() => select("contact")}
       >
-        <span className="section-title">👤 Contact Information</span>
+        <span className="section-icon">👤</span>
+        <span className="section-title">Contact Info</span>
       </div>
 
       <DndContext
