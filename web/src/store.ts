@@ -16,12 +16,16 @@ export interface ResumeState {
   future: Snapshot[];
   selectedSection: string;
   autoSaveStatus: "saved" | "saving" | "unsaved";
+  targetJobDescription: string;
+  previewPages: number;
 
   // Actions
   setResume: (r: Resume) => void;
   resetResume: () => void;
   selectSection: (s: string) => void;
   reorderSections: (from: number, to: number) => void;
+  setTargetJobDescription: (jd: string) => void;
+  setPreviewPages: (pages: number) => void;
 
   // Contact & Summary
   updateContact: (
@@ -84,6 +88,18 @@ export const useResumeStore = create<ResumeState>()(
     future: [],
     selectedSection: "experience",
     autoSaveStatus: "saved",
+    targetJobDescription: "",
+    previewPages: 1,
+
+    setTargetJobDescription: (jd) =>
+      set((s) => {
+        s.targetJobDescription = jd;
+      }),
+
+    setPreviewPages: (pages) =>
+      set((s) => {
+        s.previewPages = pages;
+      }),
 
     setResume: (r) =>
       set((s) => {

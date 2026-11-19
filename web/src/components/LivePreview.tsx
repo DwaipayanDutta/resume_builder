@@ -9,6 +9,7 @@ export interface PreviewData {
 export function LivePreview() {
   const resume = useResumeStore((s) => s.resume);
   const isLoaded = useResumeStore((s) => s.isLoaded);
+  const setPreviewPages = useResumeStore((s) => s.setPreviewPages);
 
   const [html, setHtml] = useState<string>("");
   const [pages, setPages] = useState<number>(1);
@@ -53,6 +54,7 @@ export function LivePreview() {
         if (currentReqId === requestIdRef.current) {
           setHtml(data.html);
           setPages(data.pages);
+          setPreviewPages(data.pages);
           setLoading(false);
           setError(null);
         }

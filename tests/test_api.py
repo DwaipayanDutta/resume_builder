@@ -152,3 +152,62 @@ def test_import_docx_rejects_non_docx():
     res = client.post("/api/import/docx", files=files)
     assert res.status_code == 400
     assert "Only .docx files are supported" in res.json()["detail"]
+
+
+def test_enhance_bullet_success_ollama():
+    mock_resp = '["Architected and deployed microservices reducing latency by 35%.", "Led distributed microservices migration improving system scalability."]'
+    with patch("resume_builder.api.main.OllamaBackend.complete", return_value=mock_resp):
+        payload = {
+            "bullet": "Led migration to microservices architecture.",
+            "job_description": "Looking for a Lead Engineer who optimizes microservices latency.",
+            "backend": "ollama",
+        }
+        res = client.post("/api/enhance-bullet", json=payload)
+        assert res.status_code == 200
+        data = res.json()
+        assert len(data["variations"]) == 2
+        assert "latency by 35%" in data["variations"][0]
+        assert "Private: Content processed locally" in data["disclosure"]
+
+
+def test_enhance_bullet_success_claude():
+    mock_resp = '```json\n["Spearheaded cloud cost optimization saving 20% annually.", "Executed FinOps initiatives to reduce infrastructure overhead."]\n```'
+    with patch("resume_builder.api.main.ClaudeBackend.complete", return_value=mock_resp):
+        payload = {
+            "bullet": "Reduced cloud infrastructure costs by 20%.",
+            "job_description": "Need FinOps and cost optimization expert.",
+            "backend": "claude",
+        }
+        res = client.post("/api/enhance-bullet", json=payload)
+        assert res.status_code == 200
+        data = res.json()
+        assert len(data["variations"]) == 2
+        assert "saving 20% annually" in data["variations"][0]
+        assert "Disclosed: Content sent externally" in data["disclosure"]
+
+
+def test_enhance_bullet_rejects_empty():
+    res = client.post("/api/enhance-bullet", json={"bullet": "   ", "job_description": "JD"})
+    assert res.status_code == 400
+    assert "Bullet text cannot be empty" in res.json()["detail"]
+
+
+def test_enhance_bullet_unsupported_backend():
+    res = client.post("/api/enhance-bullet", json={"bullet": "Did something", "job_description": "JD", "backend": "unknown"})
+    assert res.status_code == 400
+    assert "Unsupported backend" in res.json()["detail"]
+
+
+def test_enhance_bullet_backend_failure():
+    with patch("resume_builder.api.main.OllamaBackend.complete", side_effect=RuntimeError("Ollama offline")):
+        res = client.post("/api/enhance-bullet", json={"bullet": "Did something", "job_description": "JD", "backend": "ollama"})
+        assert res.status_code == 502
+        assert "Enhancement failed: Ollama offline" in res.json()["detail"]
+
+
+def test_enhance_bullet_invalid_output():
+    with patch("resume_builder.api.main.OllamaBackend.complete", return_value="Here is your bullet: Improved performance."):
+        res = client.post("/api/enhance-bullet", json={"bullet": "Did something", "job_description": "JD", "backend": "ollama"})
+        assert res.status_code == 500
+        assert "Failed to parse enhanced variations" in res.json()["detail"]
+

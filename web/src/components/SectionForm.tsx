@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -13,6 +13,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useResumeStore } from "../store";
+import { EnhanceBulletModal } from "./EnhanceBulletModal";
 
 // ---------------------------------------------------------------------------
 // Draggable Bullet Component
@@ -23,6 +24,7 @@ interface SortableBulletProps {
   flagged: boolean;
   onChange: (v: string) => void;
   onDelete: () => void;
+  onEnhance: () => void;
 }
 
 function SortableBullet({
@@ -31,6 +33,7 @@ function SortableBullet({
   flagged,
   onChange,
   onDelete,
+  onEnhance,
 }: SortableBulletProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id });
@@ -61,15 +64,26 @@ function SortableBullet({
         className="bullet-textarea"
         placeholder="Describe an achievement or responsibility..."
       />
-      <button
-        type="button"
-        className="btn-icon btn-danger"
-        onClick={onDelete}
-        title="Delete bullet"
-        aria-label="Delete bullet"
-      >
-        ✕
-      </button>
+      <div className="bullet-actions">
+        <button
+          type="button"
+          className="btn-icon btn-enhance"
+          onClick={onEnhance}
+          title="Enhance bullet with AI"
+          aria-label="Enhance bullet"
+        >
+          ✨
+        </button>
+        <button
+          type="button"
+          className="btn-icon btn-danger"
+          onClick={onDelete}
+          title="Delete bullet"
+          aria-label="Delete bullet"
+        >
+          &times;
+        </button>
+      </div>
     </div>
   );
 }
@@ -79,6 +93,7 @@ function SortableBullet({
 // ---------------------------------------------------------------------------
 export function ExperienceSectionForm() {
   const experience = useResumeStore((s) => s.resume.experience);
+  const targetJobDescription = useResumeStore((s) => s.targetJobDescription);
   const addExperience = useResumeStore((s) => s.addExperience);
   const deleteExperience = useResumeStore((s) => s.deleteExperience);
   const updateExperienceField = useResumeStore((s) => s.updateExperienceField);
@@ -87,6 +102,12 @@ export function ExperienceSectionForm() {
   const deleteBullet = useResumeStore((s) => s.deleteBullet);
   const updateBullet = useResumeStore((s) => s.updateBullet);
   const reorderBullets = useResumeStore((s) => s.reorderBullets);
+
+  const [enhancingBullet, setEnhancingBullet] = useState<{
+    expIdx: number;
+    bIdx: number;
+    value: string;
+  } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
@@ -215,6 +236,13 @@ export function ExperienceSectionForm() {
                       flagged={b.verification_status === "flagged"}
                       onChange={(val) => updateBullet(expIdx, bIdx, val)}
                       onDelete={() => deleteBullet(expIdx, bIdx)}
+                      onEnhance={() =>
+                        setEnhancingBullet({
+                          expIdx,
+                          bIdx,
+                          value: b.value,
+                        })
+                      }
                     />
                   ))}
                 </SortableContext>
@@ -222,6 +250,19 @@ export function ExperienceSectionForm() {
             </div>
           </div>
         ))
+      )}
+
+      {enhancingBullet && (
+        <EnhanceBulletModal
+          isOpen={true}
+          bullet={enhancingBullet.value}
+          jobDescription={targetJobDescription}
+          onAccept={(newBullet) => {
+            updateBullet(enhancingBullet.expIdx, enhancingBullet.bIdx, newBullet);
+            setEnhancingBullet(null);
+          }}
+          onClose={() => setEnhancingBullet(null)}
+        />
       )}
     </div>
   );

@@ -46,6 +46,93 @@ class PreviewResponse(BaseModel):
     pages: int
 
 
+class EnhanceBulletRequest(BaseModel):
+    bullet: str
+    job_description: str
+    backend: str = "ollama"  # ollama | claude | litellm
+    model: str | None = None
+    api_key: str | None = None
+    api_base: str | None = None
+
+
+class EnhanceBulletResponse(BaseModel):
+    original: str
+    variations: list[str]
+    backend_used: str
+    disclosure: str
+
+
+def _build_bullet_prompt(bullet: str, job_description: str) -> str:
+    return f"""You are an executive resume writer. Enhance the following resume bullet point to better align with the target job description.
+
+TARGET JOB DESCRIPTION:
+{job_description}
+
+ORIGINAL BULLET POINT:
+{bullet}
+
+STRICT CONSTRAINTS:
+1. Provide exactly 2 or 3 distinct variations that use strong action verbs and professional phrasing.
+2. DO NOT invent metrics, numbers, technologies, tools, dates, employers, or facts that are not present or implied in the original bullet.
+3. If a metric spot is recommended where no metric exists, use "[ADD METRIC]".
+4. Return ONLY a valid JSON array of strings containing the variations, e.g. ["variation 1", "variation 2", "variation 3"]. No markdown code fences, no extra commentary.
+"""
+
+
+def _extract_variations(text: str) -> list[str]:
+    import re, json
+    text = text.strip()
+    text = re.sub(r"^```(?:json)?\s*", "", text)
+    text = re.sub(r"\s*```$", "", text)
+    start, end = text.find("["), text.rfind("]")
+    if start == -1 or end == -1:
+        raise ValueError("No JSON array found in model response")
+    data = json.loads(text[start:end + 1])
+    if not isinstance(data, list):
+        raise ValueError("Expected a JSON array of variations")
+    variations = [str(item).strip() for item in data if str(item).strip()]
+    if len(variations) < 2:
+        raise ValueError(f"Expected at least 2 variations, but received {len(variations)}")
+    return variations[:3]
+
+
+@app.post("/api/enhance-bullet", response_model=EnhanceBulletResponse)
+def enhance_bullet(req: EnhanceBulletRequest):
+    """Contextual enhancement: sends only the selected bullet and JD context to LLM."""
+    if not req.bullet.strip():
+        raise HTTPException(status_code=400, detail="Bullet text cannot be empty")
+
+    if req.backend == "claude":
+        backend = ClaudeBackend(model=req.model or "claude-sonnet-4-20250514")
+        disclosure = "Disclosed: Content sent externally to cloud provider (Anthropic Claude API)."
+    elif req.backend == "litellm":
+        backend = LiteLLMBackend(model=req.model or "gpt-4o", api_key=req.api_key, api_base=req.api_base)
+        disclosure = f"Disclosed: Content sent to cloud provider ({req.model or 'gpt-4o'})."
+    elif req.backend == "ollama":
+        backend = OllamaBackend(model=req.model or "qwen2.5:3b")
+        disclosure = "Private: Content processed locally on your machine via Ollama (no external cloud transmission)."
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported backend '{req.backend}'")
+
+    prompt = _build_bullet_prompt(req.bullet, req.job_description)
+    try:
+        raw = backend.complete(prompt)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Enhancement failed: {e}")
+
+    try:
+        variations = _extract_variations(raw)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to parse enhanced variations: {e}")
+
+    return EnhanceBulletResponse(
+        original=req.bullet,
+        variations=variations,
+        backend_used=req.backend,
+        disclosure=disclosure,
+    )
+
+
 @app.post("/api/tailor", response_model=TailorResponse)
 def tailor(req: TailorRequest):
     if req.backend == "none":
