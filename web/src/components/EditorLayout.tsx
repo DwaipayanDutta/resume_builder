@@ -35,11 +35,16 @@ export function EditorLayout() {
     <div className="editor-root">
       <header className="editor-toolbar">
         <div className="toolbar-left">
-          <span className="app-brand">Resume Builder</span>
+          <div className="brand-badge">
+            <span className="brand-icon">📄</span>
+            <span className="app-brand">Resume Studio</span>
+            <span className="brand-tag">PRO</span>
+          </div>
+
           <div className="history-buttons">
             <button
               type="button"
-              className="btn btn-sm btn-ghost"
+              className="btn-history"
               onClick={undo}
               disabled={pastCount === 0}
               title="Undo last change"
@@ -48,7 +53,7 @@ export function EditorLayout() {
             </button>
             <button
               type="button"
-              className="btn btn-sm btn-ghost"
+              className="btn-history"
               onClick={redo}
               disabled={futureCount === 0}
               title="Redo last change"
@@ -59,22 +64,25 @@ export function EditorLayout() {
         </div>
 
         <div className="toolbar-center">
-          <span className={`save-status ${status}`}>
-            {status === "saved"
-              ? "● All changes saved"
-              : status === "saving"
-              ? "○ Saving..."
-              : "● Unsaved edits"}
-          </span>
+          <div className={`save-status-indicator ${status}`}>
+            <span className="status-dot"></span>
+            <span className="status-text">
+              {status === "saved"
+                ? "All changes saved"
+                : status === "saving"
+                ? "Saving changes..."
+                : "Unsaved edits"}
+            </span>
+          </div>
         </div>
 
         <div className="toolbar-right">
           <button
             type="button"
-            className="btn btn-primary"
+            className="btn btn-export"
             onClick={() => setExporting(true)}
           >
-            Export Resume
+            Export Resume ▾
           </button>
         </div>
       </header>

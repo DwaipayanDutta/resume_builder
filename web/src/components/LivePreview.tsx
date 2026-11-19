@@ -88,11 +88,13 @@ export function LivePreview() {
     <div className="preview-container">
       <div className="preview-header-bar">
         <div className="preview-header-left">
-          <span className="preview-title">Live Preview (A4)</span>
+          <span className="preview-title">Live Preview</span>
+          <span className="preview-format-tag">A4</span>
           {loading && <span className="preview-badge rendering">Rendering...</span>}
         </div>
         <div className="preview-header-right">
           <span className={`page-count-badge ${pages > 2 ? "badge-danger" : "badge-info"}`}>
+            <span className="badge-dot"></span>
             {pages} {pages === 1 ? "page" : "pages"}
           </span>
         </div>
