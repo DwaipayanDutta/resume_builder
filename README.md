@@ -191,6 +191,65 @@ supported model string.
 
 ---
 
+## 🎨 Full-Stack Guided Web Editor & API
+
+The repository includes a modern full-stack guided resume editor featuring a React + TypeScript frontend and a FastAPI backend with live debounced A4 preview, contextual AI bullet enhancement, and heuristic ATS checklists.
+
+### 📥 Install Web Dependencies
+
+The core CLI remains ultra-lightweight. Web and rendering dependencies are completely optional:
+
+```bash
+# Install web dependencies (FastAPI, Uvicorn, Jinja2, WeasyPrint, Mammoth)
+pip install ".[web]"
+
+# Or install all optional dependencies (LiteLLM + Web)
+pip install ".[all]"
+```
+
+### 🚀 Running the Web Editor
+
+In one terminal, start the Python API service:
+
+```bash
+uvicorn resume_builder.api.main:app --reload --port 8000
+```
+
+In a second terminal, start the Vite frontend:
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+Open your browser at `http://localhost:5173`.
+
+### 🌟 Key Web Editor Capabilities
+
+1. **Section Management & Undo/Redo:**
+   - Guided forms for Contact Info, Executive Summary, Work Experience, Education, and Skills.
+   - Drag-and-drop section reordering and bullet point reordering with deep undo/redo history.
+2. **Real-Time Split-Pane Preview:**
+   - True A4 page rendering via Jinja2 HTML templates and WeasyPrint layout engine.
+   - Debounced updates with automatic stale-request cancellation (`AbortController`).
+   - Page-count badge reporting exact rendered pages (highlighting >2 pages).
+3. **Contextual Bullet Enhancement (Inline AI):**
+   - Click `✨` alongside any bullet point to refine it against the target job description.
+   - Generates 2–3 action-oriented, factual variations without fabricating numbers or dates.
+   - Server-side key management and explicit cloud disclosure before sending data to Claude or LiteLLM.
+   - User must explicitly accept or reject variations before updating state.
+4. **ATS Alignment & Heuristic Checklist:**
+   - Real-time keyword extraction matching the job description against resume skills and experience.
+   - Accurate page-count limits (using actual rendered PDF page counts, not character approximations).
+   - Action verb heuristic checks and unresolved `[ADD METRIC]` placeholder warnings.
+   - Transparently documented as heuristics, not ATS guarantees. Critical labels are strictly reserved for requirements explicitly marked mandatory in the job description.
+5. **Export & Import:**
+   - Single-click export to high-fidelity PDF and Word (`.docx`).
+   - Existing `.docx` resume import.
+
+---
+
 ## 🗂️ Prepare your inputs
 
 ### Resume
