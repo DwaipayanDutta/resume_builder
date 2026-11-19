@@ -14,4 +14,9 @@ venv/
 
 # Resume Builder outputs
 out/
+.pytest_cache/
+
+# Work-in-progress snapshots (preserved locally)
+All_files/
+All_files.zip
 
