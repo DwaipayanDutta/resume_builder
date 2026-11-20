@@ -378,7 +378,7 @@ The live app runs at **[resume-studio-in.vercel.app](https://resume-studio-in.ve
 | AI tailoring | Local Qwen, or any provider via LiteLLM | Claude via your key (LiteLLM is too large for a Vercel function) |
 | Accounts | SQLite file on your computer | Postgres (Neon) |
 | Guided editor PDF export / page count | ✅ with WeasyPrint + Pango | ❌ (needs native libraries); use the Dashboard for PDFs |
-| Long AI runs | No limit | Up to 300 s per request (`maxDuration` in `vercel.json`) |
+| Long AI runs | No limit | Up to 60 s per request (`maxDuration` in `vercel.json`; raise to 300 once Fluid compute is enabled in the project settings) |
 
 ---
 

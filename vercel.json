@@ -6,7 +6,7 @@
   "outputDirectory": "web/dist",
   "functions": {
     "api/index.py": {
-      "maxDuration": 300,
+      "maxDuration": 60,
       "includeFiles": "src/**"
     }
   },
