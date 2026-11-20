@@ -1,0 +1,13 @@
+# Python dependencies for the hosted web app (used by Vercel for api/index.py).
+# For local installs use pyproject.toml instead: pip install ".[web]"
+fastapi>=0.110
+pydantic>=2.0
+jinja2>=3.1
+httpx>=0.24
+python-multipart>=0.0.9
+python-docx>=1.1
+reportlab>=4.0
+pypdf>=4.0
+mammoth>=1.8
+psycopg[binary]>=3.1
+litellm>=1.0.0

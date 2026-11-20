@@ -94,17 +94,79 @@ def test_passwords_and_tokens_are_not_stored_in_plain_text():
     assert auth.verify_password(PASSWORD, pw_hash) and not auth.verify_password("x", pw_hash)
 
 
-def test_builds_are_private_to_their_owner():
-    alice, bob = authed_client("Alice"), authed_client("Bob")
-    res = alice.post("/api/studio/build", data={"mode": "format"},
-                     files={"resume": ("r.txt", EXAMPLE.read_bytes(), "text/plain")})
-    assert res.status_code == 200
-    pdf_url = res.json()["files"]["pdf"]
-    assert alice.get(pdf_url).status_code == 200
-    assert bob.get(pdf_url).status_code == 404
-    assert _anon().get(pdf_url).status_code == 401
+def test_building_requires_sign_in():
+    res = _anon().post("/api/studio/build", data={"mode": "format"},
+                       files={"resume": ("r.txt", EXAMPLE.read_bytes(), "text/plain")})
+    assert res.status_code == 401
+    ok = authed_client().post("/api/studio/build", data={"mode": "format"},
+                              files={"resume": ("r.txt", EXAMPLE.read_bytes(), "text/plain")})
+    assert ok.status_code == 200
 
 
 def test_static_ui_is_public_so_the_login_page_loads():
     res = _anon().get("/")
     assert res.status_code in (200, 404)  # 404 only if the UI hasn't been built
+
+
+def test_vercel_without_database_reports_setup_error(monkeypatch):
+    monkeypatch.setenv("VERCEL", "1")
+    monkeypatch.delenv("RESUME_DB_PATH", raising=False)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.delenv("POSTGRES_URL", raising=False)
+    c = _anon()
+    # Without a cookie nothing touches the database: plain "not signed in".
+    assert c.get("/api/auth/me").status_code == 401
+    # Registering or signing in explains what to configure instead of losing accounts.
+    for res in (c.post("/api/auth/register", json={"name": "A", "email": "a@x.io", "password": PASSWORD}),
+                c.post("/api/auth/login", json={"email": "a@x.io", "password": PASSWORD})):
+        assert res.status_code == 503
+        assert "Postgres" in res.json()["detail"]
+
+
+def test_https_cookie_is_secure_behind_proxy():
+    c = _anon()
+    import uuid
+    res = c.post("/api/auth/register", headers={"x-forwarded-proto": "https"},
+                 json={"name": "A", "email": f"s-{uuid.uuid4().hex[:8]}@example.com", "password": PASSWORD})
+    assert "secure" in res.headers["set-cookie"].lower()
+
+
+# ---------------------------------------------------------------- PostgreSQL adapter
+class _FakeCursor:
+    def __init__(self, rows):
+        self._rows = rows
+
+    def fetchall(self):
+        return self._rows
+
+
+class _FakePg:
+    """Records SQL the adapter would send to PostgreSQL."""
+
+    def __init__(self):
+        self.sql = []
+
+    def execute(self, sql, params=()):
+        self.sql.append((sql, params))
+        if sql.lstrip().upper().startswith("INSERT INTO USERS"):
+            return _FakeCursor([{"id": 41}])
+        return _FakeCursor([])
+
+
+def test_postgres_adapter_uses_pg_placeholders_and_schema():
+    fake = _FakePg()
+    db = auth.DB(fake, postgres=True)
+    row = db.one("INSERT INTO users (email, name, password_hash, created_at) VALUES (?, ?, ?, ?) RETURNING id",
+                 ("a@x.io", "A", "h", 1.0))
+    assert row == {"id": 41}
+    sql, params = fake.sql[-1]
+    assert "?" not in sql and sql.count("%s") == 4 and params == ("a@x.io", "A", "h", 1.0)
+    assert "BIGSERIAL PRIMARY KEY" in auth._SCHEMA_PG and "AUTOINCREMENT" not in auth._SCHEMA_PG
+    assert "user_id BIGINT" in auth._SCHEMA_PG
+
+
+def test_postgres_unique_violation_is_recognised():
+    class PgErr(Exception):
+        sqlstate = "23505"
+    assert auth._is_unique_violation(PgErr())
+    assert not auth._is_unique_violation(ValueError())

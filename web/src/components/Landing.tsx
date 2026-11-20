@@ -28,7 +28,7 @@ const FEATURES: { title: string; body: string; icon: string }[] = [
   },
   {
     title: "Format-Only Builds",
-    body: "Turn your plain-text resume into a polished 2-page PDF and Word file. No AI, nothing leaves your computer.",
+    body: "Turn your plain-text resume into a polished 2-page PDF and Word file. No AI involved, your words stay exactly as written.",
     icon: "M7 3h7l5 5v13H7z M14 3v5h5 M10 13h6 M10 17h6",
   },
   {
@@ -265,8 +265,8 @@ export function Landing({ onGetStarted, onSignIn }: Props) {
           <div>
             <h4>Privacy</h4>
             <ul className="plain">
-              <li>Runs on your own computer</li>
-              <li>Local AI keeps everything offline</li>
+              <li>Resume files are never stored</li>
+              <li>Run it yourself with a local AI model</li>
               <li>Cloud AI is always disclosed first</li>
             </ul>
           </div>

@@ -13,6 +13,13 @@
 [![Platform](https://img.shields.io/badge/Windows-one--click-0078D6?logo=windows&logoColor=white)](#-windows--the-easiest-way)
 [![License](https://img.shields.io/github/license/DwaipayanDutta/resume_builder)](LICENSE)
 
+### 🌐 [Launch Resume Studio → resume-studio-in.vercel.app](https://resume-studio-in.vercel.app)
+
+[![Open the live app](https://img.shields.io/badge/Open%20the%20live%20app-resume--studio--in.vercel.app-6D4AED?style=for-the-badge&logo=vercel&logoColor=white)](https://resume-studio-in.vercel.app)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FDwaipayanDutta%2Fresume_builder&project-name=resume-studio-in&repository-name=resume-studio-in)
+
+[Live app](https://resume-studio-in.vercel.app) •
+[Deploy](#-deploy-to-vercel) •
 [Quick start](#-windows--the-easiest-way) •
 [How it works](#-how-it-works) •
 [CLI](#-command-line) •
@@ -266,24 +273,26 @@ Open your browser at `http://localhost:5175`.
 
 ### 🔐 Accounts
 
-Visitors first see a **welcome page** (features, how it works, privacy). From there the web app asks people to **create an account and sign in** before they can use it. Every
-`/api/*` endpoint except `/api/auth/*` requires a session, and each user can only download their
-own builds.
+Visitors first see a **welcome page** (features, how it works, privacy). From there the web app
+asks people to **create an account and sign in** before they can use it. Every `/api/*` endpoint
+except `/api/auth/*` requires a session.
 
-- Accounts are stored in a local SQLite file: `~/.resume_studio/studio.db` (set `RESUME_DB_PATH`
-  to move it). Passwords are salted **scrypt** hashes, and sessions are random tokens in an
-  HttpOnly, SameSite=Lax cookie that lasts 30 days. The database stores only a SHA-256 of each token.
-- Signing in is throttled after 5 failed attempts per email for 15 minutes.
-- To reset everything (all accounts and sessions), stop the app and delete `studio.db`.
-- The server only listens on `127.0.0.1`. If you ever expose it beyond your own computer, put it
-  behind HTTPS (the cookie is then marked `Secure` automatically).
+- **Where accounts live:** locally, a SQLite file at `~/.resume_studio/studio.db` (set
+  `RESUME_DB_PATH` to move it). When `DATABASE_URL` or `POSTGRES_URL` is set (as on Vercel), a
+  PostgreSQL database is used instead (`pip install ".[postgres]"`).
+- **Security:** passwords are salted **scrypt** hashes; sessions are random tokens in an HttpOnly,
+  SameSite=Lax cookie (marked `Secure` over HTTPS) that lasts 30 days, and the database stores only
+  a SHA-256 of each token. Signing in is throttled after 5 failed attempts per email for 15 minutes.
+- **Resume files are never stored:** each build runs in a temporary folder that is deleted before
+  the response is sent, and the PDF/Word/TXT come back inside the response.
+- To reset a local install (all accounts and sessions), stop the app and delete `studio.db`.
 
 ### 🔀 Backend selection (web API)
 
 The Dashboard (`/api/studio/*`) uses the same pipeline as `tailor-resume`, so it uses that CLI's
 backend names: `qwen` (Ollama), `claude` and `litellm`. Its endpoints are `GET /api/studio/config`,
-`POST /api/studio/jd-from-url`, `POST /api/studio/build` and `GET /api/studio/files/{id}/{kind}`.
-Built files are kept in your temp folder for 6 hours.
+`POST /api/studio/jd-from-url` and `POST /api/studio/build` (which returns the files in its
+response). On a hosted deployment the local `qwen` option is hidden.
 
 In the guided editor, AI is only used by `POST /api/tailor` and `POST /api/enhance-bullet`; the
 request's `backend` field picks one of:
@@ -333,6 +342,43 @@ npm run build
 5. **Export & Import:**
    - Single-click export to high-fidelity PDF and Word (`.docx`).
    - Existing `.docx` resume import.
+
+---
+
+## 🚀 Deploy to Vercel
+
+The live app runs at **[resume-studio-in.vercel.app](https://resume-studio-in.vercel.app)**. The repo is ready for Vercel:
+`vercel.json` builds the web UI as static files and runs the FastAPI backend as a Python function
+(`api/index.py`, dependencies in `requirements.txt`).
+
+**One-time setup (about 5 minutes):**
+
+1. Sign in at [vercel.com](https://vercel.com) with GitHub, then **Add New → Project** and import
+   `DwaipayanDutta/resume_builder` (or click the **Deploy with Vercel** button above).
+   Name the project **`resume-studio-in`** so the address matches the link above.
+2. Leave the build settings as they are (they come from `vercel.json`) and click **Deploy**.
+3. Accounts need a database: open the project's **Storage** tab, add a **Neon (Postgres)**
+   database and connect it to the project. This sets `DATABASE_URL` automatically. Then
+   **Redeploy**. Until this is done, registering shows a message asking for the database.
+4. Optional, AI tailoring: under **Settings → Environment Variables** add `RESUME_BACKEND=litellm`,
+   `RESUME_MODEL` (e.g. `anthropic/claude-sonnet-5-5`) and the provider key (e.g.
+   `ANTHROPIC_API_KEY`), then redeploy. Without a key the site works in **Format only** mode.
+
+> ⚠️ **AI costs:** anyone who registers on the public site can use the AI key you configure, and
+> the provider bills you. Set a spending limit with your AI provider before adding a key.
+
+**Custom domain:** once `resume-studio.in` is active at your registrar, add it under
+**Settings → Domains** in Vercel and create the DNS records Vercel shows you.
+
+**Differences from running it locally:**
+
+| Feature | Local (`run_resume.bat`) | Vercel |
+|---------|--------------------------|--------|
+| Dashboard: upload TXT, job link, PDF/Word download | ✅ | ✅ |
+| AI tailoring | Local Qwen, or any provider | Any provider via your key |
+| Accounts | SQLite file on your computer | Postgres (Neon) |
+| Guided editor PDF export / page count | ✅ with WeasyPrint + Pango | ❌ (needs native libraries); use the Dashboard for PDFs |
+| Long AI runs | No limit | Up to 300 s per request (`maxDuration` in `vercel.json`) |
 
 ---
 
@@ -397,7 +443,8 @@ Include the responsibilities and qualifications you want the tailoring step to c
 - **Cloud modes:** Claude and LiteLLM send the prompt, including resume and job-description text, to the selected API provider. Review that provider's data-handling terms before use.
 - **API keys:** The Windows launcher accepts keys for the current run. When using the CLI, prefer environment variables or `--api-key`; do not commit keys to source control. The web API only reads keys from server-side environment variables.
 - **Web editor:** Editing, preview, and export run entirely against your local API. Only the **✨ Enhance** action (and `/api/tailor`) contacts an AI backend; the enhance dialog states before sending whether the text stays local (Ollama) or goes to a cloud provider (Claude/LiteLLM).
-- **Job links:** "Fetch job" downloads that one page from the job site, from your own computer. Only public http(s) pages are fetched; local/private network addresses are refused.
+- **Hosted site:** on the Vercel deployment your TXT is uploaded to the server to build the files, which are returned to you and never stored. Accounts (name, email, password hash) are kept in the project's database.
+- **Job links:** "Fetch job" downloads that one page from the job site, from the server running Resume Studio. Only public http(s) pages are fetched; local/private network addresses are refused.
 - **Review every result:** Automated checks can flag certain employer/date changes and metric placeholders, but cannot guarantee the truth or quality of generated content. Confirm all facts, dates, credentials, and metrics before using a resume.
 
 This tool assists with tailoring and document generation; it does not guarantee ATS compatibility, interviews, or employment outcomes.
@@ -410,6 +457,9 @@ This tool assists with tailoring and document generation; it does not guarantee 
 resume_builder/
 ├─ assets/
 │  └─ banner.png                   ← README banner
+├─ api/index.py                    ← Vercel entry point for the FastAPI app
+├─ vercel.json                     ← Vercel build + routing config
+├─ requirements.txt                ← Python dependencies for the Vercel function
 ├─ run_resume.bat                  ← Windows launcher (double-click)
 ├─ run_resume_comprehensive.bat    ← Alternate Windows launcher
 ├─ pyproject.toml

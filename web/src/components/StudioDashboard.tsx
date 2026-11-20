@@ -17,8 +17,13 @@ export interface StudioConfig {
   backends: BackendInfo[];
 }
 
+export interface DownloadFile {
+  filename: string;
+  media_type: string;
+  data_base64: string;
+}
+
 export interface BuildResult {
-  job_id: string;
   mode: "format" | "tailor";
   backend: string | null;
   model: string | null;
@@ -28,14 +33,34 @@ export interface BuildResult {
   placeholders: number;
   warnings: string[];
   verification: string[];
-  files: Record<string, string>;
+  files: Record<string, DownloadFile>;
 }
 
-interface BuildEntry extends BuildResult {
+interface DownloadLink {
+  url: string;
+  filename: string;
+}
+
+interface BuildEntry extends Omit<BuildResult, "files"> {
+  id: string;
+  links: Record<string, DownloadLink>;
   name: string;
   jobLabel: string;
   createdAt: Date;
 }
+
+/** Turn the files returned by the server into in-browser (blob:) download links. */
+function toLinks(files: Record<string, DownloadFile>): Record<string, DownloadLink> {
+  const links: Record<string, DownloadLink> = {};
+  for (const [kind, f] of Object.entries(files)) {
+    const bytes = Uint8Array.from(atob(f.data_base64), (c) => c.charCodeAt(0));
+    const blob = new Blob([bytes], { type: f.media_type });
+    links[kind] = { url: URL.createObjectURL(blob), filename: f.filename };
+  }
+  return links;
+}
+
+let buildCounter = 0;
 
 async function errorDetail(res: Response): Promise<string> {
   try {
@@ -148,7 +173,14 @@ export function StudioDashboard({ onOpenEditor }: { onOpenEditor?: () => void })
   const selectedBackend = config?.backends.find((b) => b.id === backend);
   const hasJob = jdText.trim().length >= 50;
   const latest = history[0] ?? null;
-  const previewEntry = history.find((h) => h.job_id === previewId) ?? latest;
+  const previewEntry = history.find((h) => h.id === previewId) ?? latest;
+
+  // Free the in-browser file copies when the dashboard closes.
+  const historyRef = useRef<BuildEntry[]>([]);
+  historyRef.current = history;
+  useEffect(() => () => {
+    for (const h of historyRef.current) for (const l of Object.values(h.links)) URL.revokeObjectURL(l.url);
+  }, []);
 
   const pickFile = (f: File | undefined | null) => {
     setBuildError(null);
@@ -231,15 +263,17 @@ export function StudioDashboard({ onOpenEditor }: { onOpenEditor?: () => void })
         signal: controller.signal,
       });
       if (!res.ok) throw new Error(await errorDetail(res));
-      const data: BuildResult = await res.json();
+      const { files, ...data }: BuildResult = await res.json();
       const entry: BuildEntry = {
         ...data,
+        id: `build-${++buildCounter}`,
+        links: toLinks(files),
         name: basename || "Resume",
         jobLabel: mode === "tailor" ? [jobTitle, company].filter(Boolean).join(" · ") : "Format only",
         createdAt: new Date(),
       };
       setHistory((h) => [entry, ...h]);
-      setPreviewId(entry.job_id);
+      setPreviewId(entry.id);
     } catch (e: unknown) {
       if (e instanceof DOMException && e.name === "AbortError") {
         setBuildError("Build cancelled.");
@@ -495,13 +529,13 @@ export function StudioDashboard({ onOpenEditor }: { onOpenEditor?: () => void })
                 </div>
                 {history.map((h) => (
                   <div
-                    key={h.job_id}
-                    className={`doc-row ${previewEntry?.job_id === h.job_id ? "selected" : ""}`}
+                    key={h.id}
+                    className={`doc-row ${previewEntry?.id === h.id ? "selected" : ""}`}
                     role="row"
                     data-testid="doc-row"
                   >
                     <span role="cell">
-                      <button type="button" className="doc-name" onClick={() => setPreviewId(h.job_id)}>
+                      <button type="button" className="doc-name" onClick={() => setPreviewId(h.id)}>
                         {h.name}
                       </button>
                       <span className={`doc-tag ${h.mode}`}>{h.mode === "tailor" ? "AI tailored" : "Formatted"}</span>
@@ -512,11 +546,11 @@ export function StudioDashboard({ onOpenEditor }: { onOpenEditor?: () => void })
                     </span>
                     <span role="cell">{formatTime(h.createdAt)}</span>
                     <span role="cell" className="right doc-actions">
-                      <a className="btn-studio primary sm" href={`${h.files.pdf}?download=1`} download>PDF</a>
-                      <a className="btn-studio ghost sm" href={h.files.docx} download>Word</a>
-                      <a className="btn-studio ghost sm" href={`${h.files.txt}?download=1`} download>TXT</a>
-                      {h.files.report && (
-                        <a className="btn-studio ghost sm" href={`${h.files.report}?download=1`} download>Report</a>
+                      <a className="btn-studio primary sm" href={h.links.pdf.url} download={h.links.pdf.filename}>PDF</a>
+                      <a className="btn-studio ghost sm" href={h.links.docx.url} download={h.links.docx.filename}>Word</a>
+                      <a className="btn-studio ghost sm" href={h.links.txt.url} download={h.links.txt.filename}>TXT</a>
+                      {h.links.report && (
+                        <a className="btn-studio ghost sm" href={h.links.report.url} download={h.links.report.filename}>Report</a>
                       )}
                     </span>
                   </div>
@@ -535,7 +569,7 @@ export function StudioDashboard({ onOpenEditor }: { onOpenEditor?: () => void })
                 <iframe
                   title="PDF preview"
                   className="pdf-frame"
-                  src={previewEntry.files.pdf}
+                  src={previewEntry.links.pdf.url}
                 />
               </div>
             )}
@@ -556,7 +590,7 @@ export function StudioDashboard({ onOpenEditor }: { onOpenEditor?: () => void })
           <div className="promo-card">
             <span className="promo-pill">Private by default</span>
             <h3>Upload. Tailor. Download.</h3>
-            <p>Format-only builds never leave your computer. AI tailoring keeps every employer, title and date from your TXT.</p>
+            <p>Format-only builds use no AI at all, and your files are never stored. AI tailoring keeps every employer, title and date from your TXT.</p>
             <ol className="promo-steps">
               <li><span>1</span>Your TXT stays the source of truth</li>
               <li><span>2</span>Missing numbers become [ADD METRIC]</li>

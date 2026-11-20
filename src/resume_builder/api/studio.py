@@ -7,6 +7,7 @@ API keys are only read from the server's environment, never from the browser.
 """
 from __future__ import annotations
 
+import base64
 import contextlib
 import io
 import ipaddress
@@ -16,16 +17,13 @@ import re
 import shutil
 import socket
 import tempfile
-import time
-import uuid
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urljoin, urlparse
 
 import httpx
-from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from .. import create_resume as cr
@@ -33,11 +31,9 @@ from .. import tailor as tl
 
 router = APIRouter(prefix="/api/studio", tags=["studio"])
 
-STUDIO_ROOT = Path(tempfile.gettempdir()) / "resume_studio"
 MAX_TXT_BYTES = 512 * 1024
 MAX_JD_BYTES = 3 * 1024 * 1024
 MAX_JD_CHARS = 20000
-JOB_TTL_SECONDS = 6 * 3600
 FILE_KINDS = {
     "pdf": ("pdf", "application/pdf"),
     "docx": ("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
@@ -88,16 +84,26 @@ def _backend_status(name: str) -> tuple[bool, str]:
     return True, "Requires Ollama running locally with the model pulled."
 
 
+def is_hosted() -> bool:
+    """True on a hosted deployment (Vercel sets VERCEL=1; others can set RESUME_HOSTED=1)."""
+    return bool(os.environ.get("VERCEL") or os.environ.get("RESUME_HOSTED"))
+
+
+def listed_backends() -> tuple[str, ...]:
+    # Local Ollama (qwen) can't be reached from a hosted server, so it isn't offered there.
+    return tuple(b for b in LISTED_BACKENDS if not (is_hosted() and b == "qwen"))
+
+
 @router.get("/config", response_model=StudioConfig)
 def config() -> StudioConfig:
     backends = []
-    for bid in LISTED_BACKENDS:
+    for bid in listed_backends():
         meta = BACKENDS[bid]
         ok, hint = _backend_status(bid)
         backends.append(BackendInfo(id=bid, label=meta["label"], cloud=meta["cloud"],
                                     configured=ok, hint=hint))
     default = os.environ.get("RESUME_BACKEND") or None
-    if default not in LISTED_BACKENDS:
+    if default not in listed_backends():
         default = None
     return StudioConfig(default_backend=default,
                         default_model=os.environ.get("RESUME_MODEL") or None,
@@ -257,9 +263,19 @@ def jd_from_url(req: JDFetchRequest) -> JDFetchResponse:
 
 # --------------------------------------------------------------------------
 # Build (format only, or tailor + format)
+#
+# Stateless: each build runs in its own temporary folder that is deleted before the
+# response is sent, and the files come back inside the response. Nothing about a user's
+# resume is kept on the server, and it works on serverless hosts (e.g. Vercel) where the
+# next request may land on a different machine.
 # --------------------------------------------------------------------------
+class DownloadFile(BaseModel):
+    filename: str
+    media_type: str
+    data_base64: str
+
+
 class BuildResponse(BaseModel):
-    job_id: str
     mode: str
     backend: Optional[str] = None
     model: Optional[str] = None
@@ -269,17 +285,7 @@ class BuildResponse(BaseModel):
     placeholders: int
     warnings: list[str]
     verification: list[str]
-    files: dict[str, str]
-
-
-def _cleanup_old_jobs() -> None:
-    if not STUDIO_ROOT.is_dir():
-        return
-    cutoff = time.time() - JOB_TTL_SECONDS
-    for d in STUDIO_ROOT.iterdir():
-        with contextlib.suppress(Exception):
-            if d.is_dir() and d.stat().st_mtime < cutoff:
-                shutil.rmtree(d)
+    files: dict[str, DownloadFile]
 
 
 def _safe_basename(name: str) -> str:
@@ -287,16 +293,14 @@ def _safe_basename(name: str) -> str:
     return name[:60] or "Resume"
 
 
-def _user_id(request: Request) -> int:
-    user = getattr(request.state, "user", None)
-    if user is None:  # the auth middleware normally guarantees this
-        raise HTTPException(status_code=401, detail="Sign in to continue.")
-    return user.id
+def _download(path: Path, kind: str) -> DownloadFile:
+    _, media = FILE_KINDS[kind]
+    return DownloadFile(filename=path.name, media_type=media,
+                        data_base64=base64.b64encode(path.read_bytes()).decode("ascii"))
 
 
 @router.post("/build", response_model=BuildResponse)
 def build(
-    request: Request,
     resume: UploadFile = File(...),
     mode: str = Form("format"),
     job_title: str = Form(""),
@@ -307,7 +311,6 @@ def build(
     include_report: bool = Form(False),
     basename: str = Form("Resume"),
 ) -> BuildResponse:
-    owner = _user_id(request)
     if mode not in ("format", "tailor"):
         raise HTTPException(status_code=400, detail="mode must be 'format' or 'tailor'")
     if not (resume.filename or "").lower().endswith(".txt"):
@@ -320,17 +323,18 @@ def build(
     except UnicodeDecodeError:
         cv_text = raw.decode("cp1252", errors="replace")
 
-    _cleanup_old_jobs()
-    job_id = uuid.uuid4().hex
-    out = STUDIO_ROOT / job_id
-    out.mkdir(parents=True, exist_ok=True)
-    base = _safe_basename(basename)
+    with tempfile.TemporaryDirectory(prefix="resume_studio_") as tmp:
+        return _build_in(Path(tmp), cv_text, mode, job_title, company, jd_text, backend, model,
+                         include_report, _safe_basename(basename))
+
+
+def _build_in(out: Path, cv_text: str, mode: str, job_title: str, company: str, jd_text: str,
+              backend: str, model: str, include_report: bool, base: str) -> BuildResponse:
     src = out / "source.txt"
     src.write_text(cv_text, encoding="utf-8")
 
     header, main_blocks, _ = cr.parse(src)
     if not header["name"] or not any(b[0] == "job" for b in main_blocks):
-        shutil.rmtree(out, ignore_errors=True)
         raise HTTPException(
             status_code=422,
             detail="This TXT doesn't match the expected layout (name on line 1, then sections with "
@@ -338,9 +342,10 @@ def build(
         )
 
     warnings: list[str] = []
-    files: dict[str, str] = {}
+    files: dict[str, DownloadFile] = {}
     used_model = None
-    disclosure = "Format only: no AI was used and nothing left your computer."
+    disclosure = ("Format only: no AI was used. Your files were generated and are not stored on the server."
+                  if is_hosted() else "Format only: no AI was used and nothing left your computer.")
     txt_path = out / f"{base}.txt"
 
     if mode == "tailor":
@@ -366,11 +371,11 @@ def build(
                 with_report=include_report)
         except RuntimeError as e:
             raise HTTPException(status_code=502, detail=f"AI backend failed: {e}")
-        (out / f"{base}_raw.txt").write_text(raw_cv, encoding="utf-8")
         txt_path.write_text(tailored, encoding="utf-8")
         if report:
-            (out / f"{base}_report.md").write_text(report, encoding="utf-8")
-            files["report"] = f"/api/studio/files/{job_id}/report"
+            report_path = out / f"{base}_report.md"
+            report_path.write_text(report, encoding="utf-8")
+            files["report"] = _download(report_path, "report")
         header, main_blocks, side_blocks = cr.parse(txt_path)
         if not any(b[0] == "job" for b in main_blocks):
             raise HTTPException(
@@ -410,32 +415,10 @@ def build(
     if placeholders:
         warnings.append(f"{placeholders} [ADD METRIC] placeholder(s): replace with real numbers or delete them.")
 
-    files.update({k: f"/api/studio/files/{job_id}/{k}" for k in ("pdf", "docx", "txt")})
-    (out / "meta.json").write_text(json.dumps({"basename": base, "owner": owner}), encoding="utf-8")
+    files.update({"pdf": _download(pdf_path, "pdf"), "docx": _download(docx_path, "docx"),
+                  "txt": _download(txt_path, "txt")})
     return BuildResponse(
-        job_id=job_id, mode=mode, backend=backend if mode == "tailor" else None, model=used_model,
+        mode=mode, backend=backend if mode == "tailor" else None, model=used_model,
         disclosure=disclosure, pages=pages, fits_two_pages=fits, placeholders=placeholders,
         warnings=warnings, verification=verification, files=files,
     )
-
-
-@router.get("/files/{job_id}/{kind}")
-def download(request: Request, job_id: str, kind: str, download: bool = False):
-    if not re.fullmatch(r"[0-9a-f]{32}", job_id) or kind not in FILE_KINDS:
-        raise HTTPException(status_code=404, detail="File not found")
-    out = STUDIO_ROOT / job_id
-    try:
-        meta = json.loads((out / "meta.json").read_text(encoding="utf-8"))
-        base = meta["basename"]
-    except Exception:
-        raise HTTPException(status_code=404, detail="This build has expired; build again.")
-    if meta.get("owner") != _user_id(request):
-        # Same response as a missing file: don't reveal that the build exists.
-        raise HTTPException(status_code=404, detail="File not found")
-    ext, media = FILE_KINDS[kind]
-    suffix = "_report" if kind == "report" else ""
-    path = out / f"{base}{suffix}.{ext}"
-    if not path.is_file():
-        raise HTTPException(status_code=404, detail="File not found")
-    disposition = "attachment" if download or kind == "docx" else "inline"
-    return FileResponse(path, media_type=media, filename=path.name, content_disposition_type=disposition)

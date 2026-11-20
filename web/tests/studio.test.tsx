@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
 import { StudioDashboard } from "../src/components/StudioDashboard";
 import { App } from "../src/App";
@@ -13,7 +13,6 @@ const CONFIG = {
 };
 
 const BUILD = {
-  job_id: "a".repeat(32),
   mode: "tailor",
   backend: "qwen",
   model: "qwen2.5:3b",
@@ -24,9 +23,9 @@ const BUILD = {
   warnings: ["1 [ADD METRIC] placeholder(s): replace with real numbers or delete them."],
   verification: ["DOCX OK"],
   files: {
-    pdf: `/api/studio/files/${"a".repeat(32)}/pdf`,
-    docx: `/api/studio/files/${"a".repeat(32)}/docx`,
-    txt: `/api/studio/files/${"a".repeat(32)}/txt`,
+    pdf: { filename: "New Resume.pdf", media_type: "application/pdf", data_base64: btoa("%PDF-1.7 test") },
+    docx: { filename: "New Resume.docx", media_type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", data_base64: btoa("PK..") },
+    txt: { filename: "New Resume.txt", media_type: "text/plain", data_base64: btoa("Alex Morgan") },
   },
 };
 
@@ -52,6 +51,18 @@ function uploadTxt(name = "New Resume.txt") {
   fireEvent.change(input, { target: { files: [file] } });
   return file;
 }
+
+const blobs = new Map<string, Blob>();
+let blobId = 0;
+beforeEach(() => {
+  blobs.clear();
+  URL.createObjectURL = vi.fn((b: Blob) => {
+    const url = `blob:test/${++blobId}`;
+    blobs.set(url, b);
+    return url;
+  }) as unknown as typeof URL.createObjectURL;
+  URL.revokeObjectURL = vi.fn() as unknown as typeof URL.revokeObjectURL;
+});
 
 afterEach(() => {
   cleanup();
@@ -80,8 +91,14 @@ describe("StudioDashboard", () => {
     expect(form.get("jd_text")).toBeNull();
 
     const pdfLink = screen.getByRole("link", { name: "PDF" });
-    expect(pdfLink.getAttribute("href")).toBe(`${BUILD.files.pdf}?download=1`);
-    expect(screen.getByTitle("PDF preview").getAttribute("src")).toBe(BUILD.files.pdf);
+    expect(pdfLink.getAttribute("href")).toMatch(/^blob:test\//);
+    expect(pdfLink.getAttribute("download")).toBe("New Resume.pdf");
+    expect(screen.getByRole("link", { name: "Word" }).getAttribute("download")).toBe("New Resume.docx");
+    expect(screen.getByTitle("PDF preview").getAttribute("src")).toBe(pdfLink.getAttribute("href"));
+    // the PDF bytes from the response are what the link serves
+    const pdfBlob = blobs.get(pdfLink.getAttribute("href")!)!;
+    expect(pdfBlob.type).toBe("application/pdf");
+    expect(await pdfBlob.text()).toBe("%PDF-1.7 test");
     expect(screen.getByText(/no AI was used/)).toBeDefined();
   });
 

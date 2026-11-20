@@ -1,3 +1,5 @@
+import base64
+import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
@@ -13,6 +15,11 @@ client = authed_client()
 EXAMPLE = Path(__file__).resolve().parents[1] / "examples" / "New Resume.txt"
 CV_TEXT = EXAMPLE.read_text(encoding="utf-8-sig")
 JD = "We are hiring a Senior Program Manager to lead software delivery. " * 5
+
+
+def _file(body, kind):
+    f = body["files"][kind]
+    return f, base64.b64decode(f["data_base64"])
 
 
 def _upload(text=CV_TEXT, name="resume.txt"):
@@ -45,14 +52,13 @@ def test_build_format_only_produces_downloadable_pdf_and_docx():
     assert "no AI" in body["disclosure"]
     assert any("DOCX OK" in v for v in body["verification"])
 
-    pdf = client.get(body["files"]["pdf"])
-    assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF")
-    assert "inline" in pdf.headers["content-disposition"]
-    pdf_dl = client.get(body["files"]["pdf"] + "?download=1")
-    assert "attachment" in pdf_dl.headers["content-disposition"]
-    assert "My%20CV.pdf" in pdf_dl.headers["content-disposition"]
-    docx = client.get(body["files"]["docx"])
-    assert docx.status_code == 200 and docx.content[:2] == b"PK"
+    pdf_meta, pdf = _file(body, "pdf")
+    assert pdf.startswith(b"%PDF")
+    assert pdf_meta["filename"] == "My CV.pdf" and pdf_meta["media_type"] == "application/pdf"
+    docx_meta, docx = _file(body, "docx")
+    assert docx[:2] == b"PK" and docx_meta["filename"] == "My CV.docx"
+    _, txt = _file(body, "txt")
+    assert txt.decode("utf-8").startswith("Alex Morgan")
 
 
 def test_build_rejects_non_txt():
@@ -86,7 +92,7 @@ def test_build_tailor_with_mocked_backend():
     assert "locally" in body["disclosure"]
     assert body["placeholders"] == 1
     assert any("[ADD METRIC]" in w for w in body["warnings"])
-    assert client.get(body["files"]["txt"]).text.count("[ADD METRIC]") == 1
+    assert _file(body, "txt")[1].decode("utf-8").count("[ADD METRIC]") == 1
 
 
 def test_build_tailor_cloud_disclosure_and_report():
@@ -137,9 +143,13 @@ def test_build_tailor_missing_key_is_reported(monkeypatch):
     assert "ANTHROPIC_API_KEY" in res.json()["detail"]
 
 
-def test_download_rejects_bad_ids():
-    assert client.get("/api/studio/files/../../etc/pdf").status_code == 404
-    assert client.get("/api/studio/files/" + "a" * 32 + "/secret").status_code == 404
+def test_builds_leave_nothing_on_the_server():
+    before = {p.name for p in Path(tempfile.gettempdir()).glob("resume_studio_*")}
+    res = client.post("/api/studio/build", files=_upload(), data={"mode": "format"})
+    assert res.status_code == 200
+    after = {p.name for p in Path(tempfile.gettempdir()).glob("resume_studio_*")}
+    assert after == before
+    # and there is no endpoint that serves stored files
     assert client.get("/api/studio/files/" + "a" * 32 + "/pdf").status_code == 404
 
 
@@ -213,3 +223,11 @@ def test_build_litellm_claude_model_disclosure():
     body = res.json()
     assert body["model"] == "anthropic/claude-sonnet-5-5"
     assert "sent to Any provider via LiteLLM" in body["disclosure"]
+
+
+def test_hosted_mode_hides_local_ollama_and_adjusts_disclosure(monkeypatch):
+    monkeypatch.setenv("RESUME_HOSTED", "1")
+    ids = [b["id"] for b in client.get("/api/studio/config").json()["backends"]]
+    assert ids == ["litellm"]
+    body = client.post("/api/studio/build", files=_upload(), data={"mode": "format"}).json()
+    assert "not stored on the server" in body["disclosure"]

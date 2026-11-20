@@ -142,7 +142,7 @@ export function AuthPage({ onAuthed, initialMode = "signin", onBack, onModeChang
             )}
           </p>
           <p className="auth-privacy">
-            Your account is stored on the computer running Resume Studio. Passwords are hashed, never saved as text.
+            Passwords are stored only as secure hashes, never as text. Your resume files are never stored.
           </p>
         </div>
       </main>
