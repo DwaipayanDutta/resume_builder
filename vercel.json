@@ -1,8 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "cd web && npm install --no-audit --no-fund",
-  "buildCommand": "cd web && npm run build",
+  "buildCommand": "if [ -d web ]; then cd web && npm ci --no-audit --no-fund && npm run build; else echo \"No web/ folder in this build step; skipping the UI build.\"; fi",
   "outputDirectory": "web/dist",
   "functions": {
     "api/index.py": {
