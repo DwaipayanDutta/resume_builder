@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  body { font-family: "Calibri", "Arial", sans-serif; font-size: 10.5pt;
+         color: #1a1a1a; line-height: 1.45; }
+  h1 { font-size: 20pt; margin: 0 0 2px; }
+  .contact { font-size: 9.5pt; color: #444; margin-bottom: 14px; }
+  h2 { font-size: 11.5pt; text-transform: uppercase; letter-spacing: 0.5px;
+       border-bottom: 1px solid #999; padding-bottom: 2px; margin: 14px 0 6px; }
+  .entry { margin-bottom: 10px; }
+  .entry-head { display: flex; justify-content: space-between; font-weight: bold; }
+  .muted { color: #555; font-weight: normal; }
+  ul { margin: 4px 0 0 16px; padding: 0; }
+  li { margin-bottom: 2px; }
+  .flag { background: #fff3cd; border-bottom: 1px dashed #b8860b; }
+</style></head><body>
+  <h1>{{ r.contact.name.value }}</h1>
+  <div class="contact">
+    {{ r.contact.email.value if r.contact.email else '' }}
+    {% if r.contact.phone %} · {{ r.contact.phone.value }}{% endif %}
+    {% if r.contact.linkedin %} · {{ r.contact.linkedin.value }}{% endif %}
+    {% if r.contact.location %} · {{ r.contact.location.value }}{% endif %}
+  </div>
+  {% if r.summary %}
+  <h2>Professional Summary</h2>
+  <p>{{ r.summary.value }}</p>
+  {% endif %}
+  {% if r.experience %}
+  <h2>Work Experience</h2>
+  {% for e in r.experience if e.included %}
+  <div class="entry">
+    <div class="entry-head"><span>{{ e.title.value }}</span><span>{{ e.start_date.value }} – {{ e.end_date.value }}</span></div>
+    <div class="muted">{{ e.company.value }}</div>
+    <ul>{% for b in e.bullets %}<li class="{{ 'flag' if b.verification_status.value == 'flagged' else '' }}">{{ b.value }}</li>{% endfor %}</ul>
+  </div>
+  {% endfor %}
+  {% endif %}
+  {% if r.projects %}
+  <h2>Projects</h2>
+  {% for p in r.projects if p.included %}
+  <div class="entry"><div class="entry-head">{{ p.name.value }}</div>
+  <ul>{% for b in p.bullets %}<li>{{ b.value }}</li>{% endfor %}</ul></div>
+  {% endfor %}
+  {% endif %}
+  {% if r.education %}
+  <h2>Education</h2>
+  {% for ed in r.education if ed.included %}
+  <div class="entry"><strong>{{ ed.degree.value }}</strong> — {{ ed.institution.value }}</div>
+  {% endfor %}
+  {% endif %}
+  {% if r.skills %}
+  <h2>Skills</h2>
+  <p>{{ r.skills | map(attribute='value') | join(' · ') }}</p>
+  {% endif %}
+</body></html>
