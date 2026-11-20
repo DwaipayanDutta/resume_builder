@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "buildCommand": "if [ -d web ]; then cd web && npm ci --no-audit --no-fund && npm run build; else echo \"No web/ folder in this build step; skipping the UI build.\"; fi",
-  "outputDirectory": "web/dist",
+  "buildCommand": "echo \"build dir: $PWD\"; if [ -d web ]; then cd web && npm ci --no-audit --no-fund && npm run build && rm -rf ../dist && cp -r dist ../dist; else npm ci --no-audit --no-fund && npm run build; fi",
+  "outputDirectory": "dist",
   "functions": {
     "api/index.py": {
       "maxDuration": 60,
