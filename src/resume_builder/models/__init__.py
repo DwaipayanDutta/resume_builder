@@ -6,6 +6,7 @@ from .resume import (
     Experience,
     Project,
     Education,
+    CustomSection,
     ResumeData,
 )
 
@@ -17,5 +18,6 @@ __all__ = [
     "Experience",
     "Project",
     "Education",
+    "CustomSection",
     "ResumeData",
 ]

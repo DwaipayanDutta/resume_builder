@@ -502,6 +502,169 @@ export function SkillsSectionForm() {
 }
 
 // ---------------------------------------------------------------------------
+// Projects Form
+// ---------------------------------------------------------------------------
+export function ProjectsSectionForm() {
+  const projects = useResumeStore((s) => s.resume.projects);
+  const addProject = useResumeStore((s) => s.addProject);
+  const deleteProject = useResumeStore((s) => s.deleteProject);
+  const updateProjectField = useResumeStore((s) => s.updateProjectField);
+  const toggleIncluded = useResumeStore((s) => s.toggleProjectIncluded);
+  const addBullet = useResumeStore((s) => s.addProjectBullet);
+  const updateBullet = useResumeStore((s) => s.updateProjectBullet);
+  const deleteBullet = useResumeStore((s) => s.deleteProjectBullet);
+
+  return (
+    <div className="section-form projects-form">
+      <div className="section-header">
+        <h3>Projects</h3>
+        <button type="button" className="btn btn-primary" onClick={addProject}>
+          + Add Project
+        </button>
+      </div>
+
+      {projects.length === 0 ? (
+        <div className="empty-state">
+          <p>No projects added yet.</p>
+          <button type="button" className="btn btn-secondary" onClick={addProject}>
+            Add First Project
+          </button>
+        </div>
+      ) : (
+        projects.map((proj, idx) => (
+          <div key={idx} className={`card entry-card ${!proj.included ? "excluded" : ""}`}>
+            <div className="entry-header">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={proj.included}
+                  onChange={() => toggleIncluded(idx)}
+                />
+                Include in resume
+              </label>
+              <button
+                type="button"
+                className="btn-danger btn-sm"
+                onClick={() => deleteProject(idx)}
+              >
+                Delete Project
+              </button>
+            </div>
+
+            <div className="form-group">
+              <label>Project Name</label>
+              <input
+                type="text"
+                value={proj.name.value}
+                onChange={(e) => updateProjectField(idx, "name", e.target.value)}
+                placeholder="e.g. Open-source CLI toolkit"
+              />
+            </div>
+            <div className="form-group">
+              <label>Short Description</label>
+              <input
+                type="text"
+                value={proj.description?.value ?? ""}
+                onChange={(e) => updateProjectField(idx, "description", e.target.value)}
+                placeholder="One line on what it is"
+              />
+            </div>
+
+            <div className="bullets-section">
+              <div className="bullets-header">
+                <label>Highlights</label>
+                <button type="button" className="btn-link" onClick={() => addBullet(idx, "")}>
+                  + Add Bullet
+                </button>
+              </div>
+              {proj.bullets.map((b, bIdx) => (
+                <div key={bIdx} className="bullet-row">
+                  <textarea
+                    value={b.value}
+                    onChange={(e) => updateBullet(idx, bIdx, e.target.value)}
+                    rows={2}
+                    className="bullet-textarea"
+                    aria-label={`Project ${idx + 1} bullet ${bIdx + 1}`}
+                  />
+                  <div className="bullet-actions">
+                    <button
+                      type="button"
+                      className="btn-icon btn-danger"
+                      onClick={() => deleteBullet(idx, bIdx)}
+                      aria-label="Delete project bullet"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Certifications Form
+// ---------------------------------------------------------------------------
+export function CertificationsSectionForm() {
+  const certifications = useResumeStore((s) => s.resume.certifications);
+  const addCertification = useResumeStore((s) => s.addCertification);
+  const deleteCertification = useResumeStore((s) => s.deleteCertification);
+  const updateCertification = useResumeStore((s) => s.updateCertification);
+  const [text, setText] = useState("");
+
+  const handleAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (text.trim()) {
+      addCertification(text.trim());
+      setText("");
+    }
+  };
+
+  return (
+    <div className="section-form certifications-form">
+      <div className="section-header">
+        <h3>Certifications</h3>
+      </div>
+      <form onSubmit={handleAdd} className="add-skill-form">
+        <input
+          type="text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="e.g. AWS Certified Solutions Architect (2023)"
+        />
+        <button type="submit" className="btn btn-primary">
+          Add Certification
+        </button>
+      </form>
+      {certifications.map((cert, idx) => (
+        <div key={idx} className="bullet-row">
+          <input
+            type="text"
+            value={cert.value}
+            onChange={(e) => updateCertification(idx, e.target.value)}
+            aria-label={`Certification ${idx + 1}`}
+          />
+          <div className="bullet-actions">
+            <button
+              type="button"
+              className="btn-icon btn-danger"
+              onClick={() => deleteCertification(idx)}
+              aria-label="Remove certification"
+            >
+              &times;
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Master Section Form Router
 // ---------------------------------------------------------------------------
 export function SectionForm() {
@@ -518,6 +681,10 @@ export function SectionForm() {
       return <EducationSectionForm />;
     case "skills":
       return <SkillsSectionForm />;
+    case "projects":
+      return <ProjectsSectionForm />;
+    case "certifications":
+      return <CertificationsSectionForm />;
     default:
       return <ExperienceSectionForm />;
   }

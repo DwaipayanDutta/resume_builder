@@ -17,7 +17,9 @@ export interface ResumeState {
   selectedSection: string;
   autoSaveStatus: "saved" | "saving" | "unsaved";
   targetJobDescription: string;
-  previewPages: number;
+  /** Page count from the Python PDF renderer; null until known / if unavailable. */
+  previewPages: number | null;
+  previewPageError: string | null;
 
   // Actions
   setResume: (r: Resume) => void;
@@ -25,7 +27,7 @@ export interface ResumeState {
   selectSection: (s: string) => void;
   reorderSections: (from: number, to: number) => void;
   setTargetJobDescription: (jd: string) => void;
-  setPreviewPages: (pages: number) => void;
+  setPreviewPages: (pages: number | null, error?: string | null) => void;
 
   // Contact & Summary
   updateContact: (
@@ -61,6 +63,20 @@ export interface ResumeState {
   ) => void;
   toggleEducationIncluded: (index: number) => void;
 
+  // Projects
+  addProject: () => void;
+  deleteProject: (index: number) => void;
+  updateProjectField: (index: number, field: "name" | "description", value: string) => void;
+  toggleProjectIncluded: (index: number) => void;
+  addProjectBullet: (projIndex: number, value?: string) => void;
+  updateProjectBullet: (projIndex: number, bulletIndex: number, value: string) => void;
+  deleteProjectBullet: (projIndex: number, bulletIndex: number) => void;
+
+  // Certifications
+  addCertification: (value?: string) => void;
+  deleteCertification: (index: number) => void;
+  updateCertification: (index: number, value: string) => void;
+
   // Skills
   addSkill: (value?: string) => void;
   deleteSkill: (index: number) => void;
@@ -89,16 +105,18 @@ export const useResumeStore = create<ResumeState>()(
     selectedSection: "experience",
     autoSaveStatus: "saved",
     targetJobDescription: "",
-    previewPages: 1,
+    previewPages: null,
+    previewPageError: null,
 
     setTargetJobDescription: (jd) =>
       set((s) => {
         s.targetJobDescription = jd;
       }),
 
-    setPreviewPages: (pages) =>
+    setPreviewPages: (pages, error = null) =>
       set((s) => {
         s.previewPages = pages;
+        s.previewPageError = error;
       }),
 
     setResume: (r) =>
@@ -298,6 +316,96 @@ export const useResumeStore = create<ResumeState>()(
         if (!edu) return;
         pushPast(s);
         edu.included = !edu.included;
+      }),
+
+    addProject: () =>
+      set((s) => {
+        pushPast(s);
+        s.resume.projects.push({
+          name: createDefaultVerifiable(""),
+          description: createDefaultVerifiable(""),
+          bullets: [createDefaultVerifiable("")],
+          included: true,
+        });
+      }),
+
+    deleteProject: (index) =>
+      set((s) => {
+        if (index < 0 || index >= s.resume.projects.length) return;
+        pushPast(s);
+        s.resume.projects.splice(index, 1);
+      }),
+
+    updateProjectField: (index, field, value) =>
+      set((s) => {
+        const proj = s.resume.projects[index];
+        if (!proj) return;
+        pushPast(s);
+        const target = proj[field];
+        if (!target) {
+          proj[field] = createDefaultVerifiable(value);
+        } else {
+          target.value = value;
+          target.source = "user_provided";
+          target.verification_status = "verified";
+        }
+      }),
+
+    toggleProjectIncluded: (index) =>
+      set((s) => {
+        const proj = s.resume.projects[index];
+        if (!proj) return;
+        pushPast(s);
+        proj.included = !proj.included;
+      }),
+
+    addProjectBullet: (projIndex, value = "") =>
+      set((s) => {
+        const proj = s.resume.projects[projIndex];
+        if (!proj) return;
+        pushPast(s);
+        proj.bullets.push(createDefaultVerifiable(value));
+      }),
+
+    updateProjectBullet: (projIndex, bulletIndex, value) =>
+      set((s) => {
+        const b = s.resume.projects[projIndex]?.bullets[bulletIndex];
+        if (!b) return;
+        pushPast(s);
+        b.value = value;
+        b.source = "user_provided";
+        b.verification_status = "verified";
+      }),
+
+    deleteProjectBullet: (projIndex, bulletIndex) =>
+      set((s) => {
+        const proj = s.resume.projects[projIndex];
+        if (!proj || bulletIndex < 0 || bulletIndex >= proj.bullets.length) return;
+        pushPast(s);
+        proj.bullets.splice(bulletIndex, 1);
+      }),
+
+    addCertification: (value = "") =>
+      set((s) => {
+        pushPast(s);
+        s.resume.certifications.push(createDefaultVerifiable(value));
+      }),
+
+    deleteCertification: (index) =>
+      set((s) => {
+        if (index < 0 || index >= s.resume.certifications.length) return;
+        pushPast(s);
+        s.resume.certifications.splice(index, 1);
+      }),
+
+    updateCertification: (index, value) =>
+      set((s) => {
+        const cert = s.resume.certifications[index];
+        if (!cert) return;
+        pushPast(s);
+        cert.value = value;
+        cert.source = "user_provided";
+        cert.verification_status = "verified";
       }),
 
     addSkill: (value = "") =>

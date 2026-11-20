@@ -14,7 +14,8 @@ export interface AtsChecklistReport {
     items: KeywordMatchResult[];
   };
   pageCount: {
-    pages: number;
+    /** Actual rendered page count from the PDF renderer, or null if unknown. */
+    pages: number | null;
     isOptimal: boolean;
     message: string;
   };
@@ -130,8 +131,28 @@ export function getAllResumeText(resume: Resume): string {
     if (edu.degree?.value) parts.push(edu.degree.value);
   }
 
+  for (const proj of resume.projects || []) {
+    if (!proj.included) continue;
+    if (proj.name?.value) parts.push(proj.name.value);
+    if (proj.description?.value) parts.push(proj.description.value);
+    for (const b of proj.bullets || []) {
+      if (b.value) parts.push(b.value);
+    }
+  }
+
   for (const skill of resume.skills || []) {
     if (skill.value) parts.push(skill.value);
+  }
+
+  for (const cert of resume.certifications || []) {
+    if (cert.value) parts.push(cert.value);
+  }
+
+  for (const cs of resume.custom_sections || []) {
+    if (!cs.included) continue;
+    for (const item of cs.items || []) {
+      if (item.value) parts.push(item.value);
+    }
   }
 
   return parts.join(" ").toLowerCase();
@@ -168,7 +189,8 @@ export function checkActionVerbs(resume: Resume): { total: number; withVerb: num
 export function evaluateAtsChecklist(
   resume: Resume,
   jobDescription: string,
-  renderedPageCount: number
+  renderedPageCount: number | null,
+  pageCountError: string | null = null
 ): AtsChecklistReport {
   // 1. Keywords
   const extracted = extractJobKeywords(jobDescription);
@@ -190,9 +212,13 @@ export function evaluateAtsChecklist(
   const missingCount = keywordItems.length - matchedCount;
 
   // 2. Page count (using actual rendered result from Python service)
-  const isOptimalPage = renderedPageCount >= 1 && renderedPageCount <= 2;
+  // Never estimated from text length: if the renderer could not report a count, say so.
+  const isOptimalPage =
+    renderedPageCount !== null && renderedPageCount >= 1 && renderedPageCount <= 2;
   const pageMessage =
-    renderedPageCount > 2
+    renderedPageCount === null
+      ? `Page count unavailable${pageCountError ? `: ${pageCountError}` : " until the preview renders"}`
+      : renderedPageCount > 2
       ? `Resume is ${renderedPageCount} pages (exceeds recommended 2-page limit)`
       : `Resume is ${renderedPageCount} page${renderedPageCount === 1 ? "" : "s"} (within 2-page limit)`;
 

@@ -2,9 +2,9 @@
 
 <img src="assets/banner.png" alt="Resume Builder banner" width="100%" />
 
-# 📄 Resume Builder
+# ðŸ“„ Resume Builder
 
-**Tailor your resume to any job in seconds — locally or with 100+ LLMs.**
+**Tailor your resume to any job in seconds â€” locally or with 100+ LLMs.**
 
 [![Python](https://img.shields.io/badge/Python-3.9+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![LiteLLM](https://img.shields.io/badge/LiteLLM-100%2B%20providers-6C47FF)](https://docs.litellm.ai/docs/providers)
@@ -13,32 +13,32 @@
 [![Platform](https://img.shields.io/badge/Windows-one--click-0078D6?logo=windows&logoColor=white)](#-windows--the-easiest-way)
 [![License](https://img.shields.io/github/license/DwaipayanDutta/resume_builder)](LICENSE)
 
-[Quick start](#-windows--the-easiest-way) •
-[How it works](#-how-it-works) •
-[CLI](#-command-line) •
-[Input format](#-prepare-your-inputs) •
-[Outputs](#-output-files) •
-[Layout](#-repo-layout) •
+[Quick start](#-windows--the-easiest-way) â€¢
+[How it works](#-how-it-works) â€¢
+[CLI](#-command-line) â€¢
+[Input format](#-prepare-your-inputs) â€¢
+[Outputs](#-output-files) â€¢
+[Layout](#-repo-layout) â€¢
 [Troubleshooting](#-troubleshooting)
 
 </div>
 
 ---
 
-## ✨ Overview
+## âœ¨ Overview
 
 Resume Builder tailors your resume to a job using the bundled prompt
 ([`prompt_template.txt`](src/resume_builder/prompt_template.txt)), then builds a polished
 2-page **`Resume.docx`** and **`Resume.pdf`** with the original `create_resume.py` (unchanged).
 
 Powered by **[LiteLLM](https://docs.litellm.ai/docs/providers)** (OpenAI, Gemini, Groq,
-Mistral, Bedrock, …) plus built-in **Ollama** and **Claude** backends.
+Mistral, Bedrock, â€¦) plus built-in **Ollama** and **Claude** backends.
 
-| 🎯 Tailored | 🔒 Private | 🌐 Flexible | 📄 Polished |
+| ðŸŽ¯ Tailored | ðŸ”’ Private | ðŸŒ Flexible | ðŸ“„ Polished |
 |:-----------:|:----------:|:-----------:|:-----------:|
 | Matches your resume to the job description | Run fully offline with a local model | 100+ LLM providers | 2-page DOCX + PDF output |
 
-### 🔄 How it works
+### ðŸ”„ How it works
 
 1. Provide a structured plain-text resume and the target job description.
 2. Choose local Qwen, Claude, or a provider supported by LiteLLM to tailor the content.
@@ -47,14 +47,14 @@ Mistral, Bedrock, …) plus built-in **Ollama** and **Claude** backends.
 
 | Backend | Internet needed | API key | Data processing |
 |---------|:---------------:|:-------:|-----------------|
-| 🧠 **Qwen via Ollama** | Model download only | No | Local after setup |
-| 🤖 **Claude** | Yes | Anthropic key | Sent to Anthropic's API |
-| 🌐 **LiteLLM provider** | Usually | Provider-dependent | Sent to the selected provider |
-| 📝 **Format only** | No | No | Local |
+| ðŸ§  **Qwen via Ollama** | Model download only | No | Local after setup |
+| ðŸ¤– **Claude** | Yes | Anthropic key | Sent to Anthropic's API |
+| ðŸŒ **LiteLLM provider** | Usually | Provider-dependent | Sent to the selected provider |
+| ðŸ“ **Format only** | No | No | Local |
 
 ---
 
-## 🖥️ Windows — the easiest way
+## ðŸ–¥ï¸ Windows â€” the easiest way
 
 > Just want to run it? **Double-click `run_resume.bat`.** That's it.
 
@@ -62,14 +62,32 @@ You'll get a menu:
 
 | # | Option | What it does | Needs |
 |:-:|--------|--------------|-------|
-| **1** | 🧠 **Local Qwen 2.5 3B** | Installs Ollama via winget and downloads the model (~2 GB, one time). Fully offline, fully private. | Nothing |
-| **2** | 🤖 **Claude API** | Tailors with Anthropic Claude. You paste your `ANTHROPIC_API_KEY` — used for this run only, never written to disk. | Anthropic API key |
-| **3** | 🌐 **Any provider (LiteLLM)** | Gemini, OpenAI, Groq, Mistral, OpenRouter, Together, DeepSeek, xAI, Azure, Fireworks, Perplexity, HuggingFace, Replicate… | Provider API key |
-| **4** | 📝 **Format only** | Just re-renders your existing TXT into `.docx` / `.pdf`. No AI, no key, no cost. | Nothing |
+| **1** | ðŸ§  **Local Qwen 2.5 3B** | Installs Ollama via winget and downloads the model (~2 GB, one time). Fully offline, fully private. | Nothing |
+| **2** | ðŸŒ **Any provider (LiteLLM)** | Claude (Anthropic), Gemini, OpenAI, Groq, Mistral, OpenRouter, Together, DeepSeek, xAI, Azure, Fireworks, Perplexity, HuggingFace, Replicateâ€¦ Your key is used for this run only, never written to disk. LiteLLM is installed on first use. | Provider API key |
+| **3** | ðŸ“ **Format only** | Just re-renders your existing TXT into `.docx` / `.pdf`. No AI, no key, no cost. | Nothing |
+| **4** | ðŸ–¥ï¸ **Web app** | Opens **Resume Studio** in your browser: upload your `.txt`, paste a job link (or the description), tailor or format, then preview and download the PDF/Word. You first pick the AI (same choices as 1â€“3). | Nothing extra; Node.js is installed via winget once to build the UI |
 
-### 🔑 How option 3 (any provider) works
+#### ðŸ–¥ï¸ Option 4: the web app
 
-When you choose **3**, the script asks for your credentials in the form `provider:key`:
+Available in both `run_resume.bat` and `run_resume_comprehensive.bat`.
+
+1. Pick option **4**, then choose the AI to use (local Qwen, any provider such as Claude, or none).
+   Keys are entered in the console window and stay in that window's memory only.
+2. The first run installs the web libraries (`pip install ".[web]"`), installs Node.js with winget
+   if needed, and builds the interface (about a minute). Later runs start in seconds.
+3. Your browser opens at `http://127.0.0.1:8001/` (the next free port if 8001 is busy). The server
+   only listens on your own computer.
+4. On the **Dashboard**: upload your resume `.txt`, paste the job posting link and click
+   **Fetch job** (or paste the description), choose **Tailor with AI** or **Format only**, then
+   **Build**. Preview the PDF in the page and download **PDF**, **Word** or the tailored **TXT**.
+5. Keep the console window open while you use the app; close it to stop the server.
+
+Job links are read with the posting's structured data when the site provides it. Sites that need a
+sign-in (for example LinkedIn) can't be read; paste the description instead.
+
+### ðŸ”‘ How option 2 (any provider, including Claude) works
+
+When you choose **2**, the script asks for your credentials in the form `provider:key`:
 
 ```text
 provider:key: gemini:AIzaSy...your-key...
@@ -86,20 +104,20 @@ Common examples:
 
 | Provider | Credentials prompt | Model string |
 |----------|--------------------|--------------|
-| **Gemini** | `gemini:AIzaSy…` | `gemini/gemini-2.5-flash` |
-| **OpenAI** | `openai:sk-…` | `openai/gpt-4o` |
-| **Anthropic** | `anthropic:sk-ant-…` | `anthropic/claude-3-5-sonnet-20241022` |
-| **Groq** | `groq:gsk_…` | `groq/llama-3.3-70b-versatile` |
-| **Mistral** | `mistral:…` | `mistral/mistral-large-latest` |
-| **OpenRouter** | `openrouter:sk-or-…` | `openrouter/anthropic/claude-3.5-sonnet` |
+| **Claude (Anthropic)** | `anthropic:sk-ant-â€¦` | `anthropic/claude-sonnet-5-5` |
+| **Gemini** | `gemini:AIzaSyâ€¦` | `gemini/gemini-2.5-flash` |
+| **OpenAI** | `openai:sk-â€¦` | `openai/gpt-4o` |
+| **Groq** | `groq:gsk_â€¦` | `groq/llama-3.3-70b-versatile` |
+| **Mistral** | `mistral:â€¦` | `mistral/mistral-large-latest` |
+| **OpenRouter** | `openrouter:sk-or-â€¦` | `openrouter/anthropic/claude-3.5-sonnet` |
 
 Supported provider names: `openai`, `anthropic` / `claude`, `gemini` / `google`, `groq`,
 `mistral`, `cohere`, `openrouter`, `together`, `deepseek`, `xai`, `azure`, `fireworks`,
 `perplexity`, `huggingface`, `replicate`. To add another, edit `:map_provider_env` inside
-`run_resume.bat` — one line per provider.
+`run_resume.bat` â€” one line per provider.
 
 <details>
-<summary><b>⚠️ <code>.bat</code> file gotcha (one-time, 10 seconds)</b></summary>
+<summary><b>âš ï¸ <code>.bat</code> file gotcha (one-time, 10 seconds)</b></summary>
 
 <br>
 
@@ -107,19 +125,19 @@ If you get **`The system cannot find the batch label specified`** when you doubl
 your editor saved the file with **LF (Unix) line endings**. `cmd.exe` can't resolve
 `goto :label` in LF-only `.bat` files. Fix:
 
-- **VS Code:** click `LF` in the bottom-right corner → choose **`CRLF`** → save (`Ctrl+S`).
-- **Notepad:** File → Save As → Encoding **ANSI** (modern Notepad preserves CRLF).
-- **Notepad++:** Edit → EOL Conversion → **Windows (CR LF)** → save.
+- **VS Code:** click `LF` in the bottom-right corner â†’ choose **`CRLF`** â†’ save (`Ctrl+S`).
+- **Notepad:** File â†’ Save As â†’ Encoding **ANSI** (modern Notepad preserves CRLF).
+- **Notepad++:** Edit â†’ EOL Conversion â†’ **Windows (CR LF)** â†’ save.
 
-That's it — no other setup needed.
+That's it â€” no other setup needed.
 
 </details>
 
 ---
 
-## 💻 Command line
+## ðŸ’» Command line
 
-### 📥 Install
+### ðŸ“¥ Install
 
 ```bash
 # Lightweight core: docx, reportlab, pypdf only
@@ -129,11 +147,11 @@ pip install .
 pip install ".[ai]"
 ```
 
-> **Why `.[ai]`?** The base package stays minimal — zero heavy dependencies for people who
+> **Why `.[ai]`?** The base package stays minimal â€” zero heavy dependencies for people who
 > only need to format a resume or use the built-in Ollama/Claude backends. Adding `[ai]`
 > pulls in `litellm` and its client libraries to unlock 100+ LLMs.
 
-### 🚀 Tailor a resume
+### ðŸš€ Tailor a resume
 
 ```bash
 # Local, free, private (Ollama + Qwen 2.5 3B)
@@ -160,13 +178,13 @@ tailor-resume "examples/New Resume.txt" \
   -o out --verify
 ```
 
-### 📝 Format only (no AI)
+### ðŸ“ Format only (no AI)
 
 ```bash
 create-resume resume.txt -o out --verify
 ```
 
-### 🌐 LiteLLM backends
+### ðŸŒ LiteLLM backends
 
 The `--backend litellm` path reads the provider's API key from your environment
 (or you can set it inline for a single run):
@@ -191,11 +209,11 @@ supported model string.
 
 ---
 
-## 🎨 Full-Stack Guided Web Editor & API
+## ðŸŽ¨ Full-Stack Guided Web Editor & API
 
 The repository includes a modern full-stack guided resume editor featuring a React + TypeScript frontend and a FastAPI backend with live debounced A4 preview, contextual AI bullet enhancement, and heuristic ATS checklists.
 
-### 📥 Install Web Dependencies
+### ðŸ“¥ Install Web Dependencies
 
 The core CLI remains ultra-lightweight. Web and rendering dependencies are completely optional:
 
@@ -203,19 +221,40 @@ The core CLI remains ultra-lightweight. Web and rendering dependencies are compl
 # Install web dependencies (FastAPI, Uvicorn, Jinja2, WeasyPrint, Mammoth)
 pip install ".[web]"
 
-# Or install all optional dependencies (LiteLLM + Web)
+# Optional: Claude backend for the web API (uses the official anthropic SDK)
+pip install ".[web,claude]"
+
+# Or install all optional dependencies (LiteLLM + Claude + Web)
 pip install ".[all]"
 ```
 
-### 🚀 Running the Web Editor
+> **PDF rendering / page count:** WeasyPrint needs the native Pango libraries. On Linux/macOS install
+> them with your package manager (`apt install libpango-1.0-0 libpangoft2-1.0-0` / `brew install pango`);
+> on Windows install the GTK3 runtime (MSYS2 `pacman -S mingw-w64-x86_64-pango`) and put its `bin`
+> on `PATH`. Without them the editor still shows the HTML preview and exports DOCX, but PDF export
+> fails with an explicit error and the page count is shown as **unavailable** (it is never estimated).
 
-In one terminal, start the Python API service:
+### ðŸš€ Running the Web Editor
+
+**One command (what `run_resume.bat` option 4 does):** build the UI once, then start the
+server, which serves both the API and the UI on one local port and opens your browser:
 
 ```bash
-uvicorn resume_builder.api.main:app --reload --port 8000
+cd web && npm install && npm run build && cd ..
+resume-studio            # or: python -m resume_builder.webapp  [--port 8001] [--no-browser]
 ```
 
-In a second terminal, start the Vite frontend:
+Set `RESUME_BACKEND` (`qwen`, `claude` or `litellm`) and `RESUME_MODEL` beforehand to preselect
+the AI in the Dashboard, plus the provider's key variable (e.g. `ANTHROPIC_API_KEY`).
+
+**For frontend development (hot reload)**, in one terminal start the Python API service:
+
+```bash
+uvicorn resume_builder.api.main:app --reload --port 8001
+```
+
+In a second terminal, start the Vite frontend (requires Node.js 18+). The dev server runs on port
+5175 and proxies `/api` to `http://127.0.0.1:8001`:
 
 ```bash
 cd web
@@ -223,20 +262,67 @@ npm install
 npm run dev
 ```
 
-Open your browser at `http://localhost:5173`.
+Open your browser at `http://localhost:5175`.
 
-### 🌟 Key Web Editor Capabilities
+### ðŸ” Accounts
+
+Visitors first see a **welcome page** (features, how it works, privacy). From there the web app asks people to **create an account and sign in** before they can use it. Every
+`/api/*` endpoint except `/api/auth/*` requires a session, and each user can only download their
+own builds.
+
+- Accounts are stored in a local SQLite file: `~/.resume_studio/studio.db` (set `RESUME_DB_PATH`
+  to move it). Passwords are salted **scrypt** hashes, and sessions are random tokens in an
+  HttpOnly, SameSite=Lax cookie that lasts 30 days. The database stores only a SHA-256 of each token.
+- Signing in is throttled after 5 failed attempts per email for 15 minutes.
+- To reset everything (all accounts and sessions), stop the app and delete `studio.db`.
+- The server only listens on `127.0.0.1`. If you ever expose it beyond your own computer, put it
+  behind HTTPS (the cookie is then marked `Secure` automatically).
+
+### ðŸ”€ Backend selection (web API)
+
+The Dashboard (`/api/studio/*`) uses the same pipeline as `tailor-resume`, so it uses that CLI's
+backend names: `qwen` (Ollama), `claude` and `litellm`. Its endpoints are `GET /api/studio/config`,
+`POST /api/studio/jd-from-url`, `POST /api/studio/build` and `GET /api/studio/files/{id}/{kind}`.
+Built files are kept in your temp folder for 6 hours.
+
+In the guided editor, AI is only used by `POST /api/tailor` and `POST /api/enhance-bullet`; the
+request's `backend` field picks one of:
+
+| `backend` | Where data goes | Credentials (server-side env vars only) |
+|-----------|-----------------|-----------------------------------------|
+| `ollama` (default) | Local Ollama at `http://localhost:11434` | none |
+| `claude` | Anthropic API | `ANTHROPIC_API_KEY` |
+| `litellm` | Provider chosen by `model` (e.g. `gpt-4o`, `gemini/â€¦`) | provider's usual env var, e.g. `OPENAI_API_KEY` |
+
+API keys are **never** accepted from the browser; set them in the environment of the `uvicorn`
+process. Preview (`/api/render/preview`) and export (`/api/render/pdf`, `/api/render/docx`) are
+format-only and never call an AI backend.
+
+### ðŸ§ª Tests
+
+```bash
+pip install ".[web,test]"
+pytest                      # Python API/model tests (real-PDF tests skip if Pango is missing)
+
+cd web
+npm test                    # Vitest: store, schemas, preview, enhance, ATS, sections
+npm run typecheck
+npm run build
+```
+
+### ðŸŒŸ Key Web Editor Capabilities
 
 1. **Section Management & Undo/Redo:**
-   - Guided forms for Contact Info, Executive Summary, Work Experience, Education, and Skills.
+   - Guided forms for Contact Info, Summary, Work Experience, Projects, Education, Skills, and Certifications.
    - Drag-and-drop section reordering and bullet point reordering with deep undo/redo history.
 2. **Real-Time Split-Pane Preview:**
-   - True A4 page rendering via Jinja2 HTML templates and WeasyPrint layout engine.
+   - True A4 page rendering via Jinja2 HTML templates (auto-escaped) and the WeasyPrint layout engine, shown in a fully sandboxed iframe.
    - Debounced updates with automatic stale-request cancellation (`AbortController`).
    - Page-count badge reporting exact rendered pages (highlighting >2 pages).
 3. **Contextual Bullet Enhancement (Inline AI):**
-   - Click `✨` alongside any bullet point to refine it against the target job description.
-   - Generates 2–3 action-oriented, factual variations without fabricating numbers or dates.
+   - Click `âœ¨` alongside any bullet point to refine it against the target job description.
+   - Sends only the selected bullet and job-description context to the backend.
+   - Returns 2â€“3 action-oriented variations; any variation containing a number not present in the original bullet is discarded server-side.
    - Server-side key management and explicit cloud disclosure before sending data to Claude or LiteLLM.
    - User must explicitly accept or reject variations before updating state.
 4. **ATS Alignment & Heuristic Checklist:**
@@ -250,7 +336,24 @@ Open your browser at `http://localhost:5173`.
 
 ---
 
-## 🗂️ Prepare your inputs
+## ðŸŽ¨ Brand assets
+
+Logo files live in [`assets/brand/`](assets/brand/):
+
+| File | Use |
+|------|-----|
+| `resume-studio-icon.svg` | Standalone icon, transparent background (also the favicon) |
+| `resume-studio-logo-on-dark.svg` / `-on-light.svg` | Horizontal lockup for dark / light backgrounds |
+| `resume-studio-app-icon.svg` / `resume-studio-app-icon-1024.png` | 1024 Ã— 1024 application icon |
+
+The icon is a document with a folded corner and an **R** whose leg becomes a verification
+checkmark, plus a teal AI sparkle. It is designed on a 64-unit grid so it stays legible at
+32 Ã— 32 px. The wordmark is outlined Poppins SemiBold (SIL Open Font License). To regenerate the
+files, run `assets/brand/source/make_brand.py` (see its docstring).
+
+---
+
+## ðŸ—‚ï¸ Prepare your inputs
 
 ### Resume
 
@@ -266,88 +369,98 @@ Use a `.txt` resume with the same structure as [`examples/New Resume.txt`](examp
 Pass the job description as a plain-text file with `--jd`, or provide its text with `--jd-text`.
 Include the responsibilities and qualifications you want the tailoring step to consider.
 
-> 🔐 Use sample or anonymized personal information in public examples. Keep generated resumes and reports out of version control.
+> ðŸ” Use sample or anonymized personal information in public examples. Keep generated resumes and reports out of version control.
 
 ---
 
-## 📦 Output files
+## ðŸ“¦ Output files
 
 | File | Description |
 |------|-------------|
-| 📝 `Resume.txt` | Tailored plain-text resume |
-| 📄 `Resume.docx` | 2-page Word document (via `create_resume.py`) |
-| 📕 `Resume.pdf` | 2-page PDF (via `create_resume.py`) |
-| 📊 `Resume_report.md` | Fit rating, keyword table, metric questions, LinkedIn "About", bullet variations |
-| 🔍 `Resume_raw.txt` | The model's raw reply — for debugging |
+| ðŸ“ `Resume.txt` | Tailored plain-text resume |
+| ðŸ“„ `Resume.docx` | 2-page Word document (via `create_resume.py`) |
+| ðŸ“• `Resume.pdf` | 2-page PDF (via `create_resume.py`) |
+| ðŸ“Š `Resume_report.md` | Fit rating, keyword table, metric questions, LinkedIn "About", bullet variations |
+| ðŸ” `Resume_raw.txt` | The model's raw reply â€” for debugging |
 
-### ✅ After tailoring — check the warnings
+### âœ… After tailoring â€” check the warnings
 
-- 📐 **Layout** — your input TXT must use the same layout as `examples/New Resume.txt`.
-- 🕵️ **Employer / date mismatches** — the tool flags any employer or date that differs from your original.
-- ✏️ **`[ADD METRIC]` placeholders** — the tool leaves these where you should add a concrete number. Fill them in before sending the resume out.
+- ðŸ“ **Layout** â€” your input TXT must use the same layout as `examples/New Resume.txt`.
+- ðŸ•µï¸ **Employer / date mismatches** â€” the tool flags any employer or date that differs from your original.
+- âœï¸ **`[ADD METRIC]` placeholders** â€” the tool leaves these where you should add a concrete number. Fill them in before sending the resume out.
 
 ---
 
-## 🛡️ Privacy and responsible use
+## ðŸ›¡ï¸ Privacy and responsible use
 
 - **Local mode:** With Ollama, resume and job-description content is processed by the local model after the model has been downloaded.
 - **Cloud modes:** Claude and LiteLLM send the prompt, including resume and job-description text, to the selected API provider. Review that provider's data-handling terms before use.
-- **API keys:** The Windows launcher accepts keys for the current run. When using the CLI, prefer environment variables or `--api-key`; do not commit keys to source control.
+- **API keys:** The Windows launcher accepts keys for the current run. When using the CLI, prefer environment variables or `--api-key`; do not commit keys to source control. The web API only reads keys from server-side environment variables.
+- **Web editor:** Editing, preview, and export run entirely against your local API. Only the **âœ¨ Enhance** action (and `/api/tailor`) contacts an AI backend; the enhance dialog states before sending whether the text stays local (Ollama) or goes to a cloud provider (Claude/LiteLLM).
+- **Job links:** "Fetch job" downloads that one page from the job site, from your own computer. Only public http(s) pages are fetched; local/private network addresses are refused.
 - **Review every result:** Automated checks can flag certain employer/date changes and metric placeholders, but cannot guarantee the truth or quality of generated content. Confirm all facts, dates, credentials, and metrics before using a resume.
 
 This tool assists with tailoring and document generation; it does not guarantee ATS compatibility, interviews, or employment outcomes.
 
 ---
 
-## 🧩 Repo layout
+## ðŸ§© Repo layout
 
 ```text
 resume_builder/
-├─ assets/
-│  └─ banner.png                   ← README banner
-├─ run_resume.bat                  ← Windows launcher (double-click)
-├─ run_resume_comprehensive.bat    ← Alternate Windows launcher
-├─ pyproject.toml
-├─ examples/
-│  └─ New Resume.txt               ← Sample input — match this layout
-└─ src/resume_builder/
-   ├─ prompt_template.txt          ← The tailoring prompt
-   ├─ tailor.py                    ← `tailor-resume` CLI
-   └─ …                            ← Backends: qwen, claude, litellm
+â”œâ”€ assets/
+â”‚  â””â”€ banner.png                   â† README banner
+â”œâ”€ run_resume.bat                  â† Windows launcher (double-click)
+â”œâ”€ run_resume_comprehensive.bat    â† Alternate Windows launcher
+â”œâ”€ pyproject.toml
+â”œâ”€ examples/
+â”‚  â””â”€ New Resume.txt               â† Sample input â€” match this layout
+â”œâ”€ src/resume_builder/
+â”‚  â”œâ”€ create_resume.py             â† `create-resume` CLI (TXT â†’ DOCX + PDF)
+â”‚  â”œâ”€ tailor.py                    â† `tailor-resume` CLI
+â”‚  â”œâ”€ webapp.py                    â† `resume-studio` launcher (API + built UI, opens browser)
+â”‚  â”œâ”€ prompt_template.txt          â† The tailoring prompt
+â”‚  â”œâ”€ models/resume.py             â† Pydantic ResumeData schema (web layer)
+â”‚  â”œâ”€ ai/                          â† Web backends (Ollama, Claude, LiteLLM) + orchestrator
+â”‚  â”œâ”€ verification/fact_checker.py â† Flags invented metrics in AI output
+â”‚  â”œâ”€ rendering/                   â† Jinja2 HTML/PDF + DOCX renderers, templates/
+â”‚  â””â”€ api/                         â† FastAPI app: main.py (editor API), studio.py (Dashboard API)
+â”œâ”€ tests/                          â† pytest suite for the API and models
+â””â”€ web/                            â† React + Vite editor (src/, tests/)
 ```
 
 ---
 
-## ❓ Troubleshooting
+## â“ Troubleshooting
 
 | Symptom | Fix |
 |---------|-----|
-| `The system cannot find the batch label specified` | `.bat` was saved with LF line endings — re-save as CRLF (see gotcha above). |
+| `The system cannot find the batch label specified` | `.bat` was saved with LF line endings â€” re-save as CRLF (see gotcha above). |
 | `Python was not found on PATH` | Install Python 3 from <https://www.python.org/downloads/> and tick **"Add python.exe to PATH"**. |
 | `pyproject.toml was not found` | Extract the whole zip first, then run the `.bat` from inside the extracted folder. |
-| `pip install` fails | Check your internet connection, then re-run `run_resume.bat` — it retries the install automatically. |
+| `pip install` fails | Check your internet connection, then re-run `run_resume.bat` â€” it retries the install automatically. |
 | Ollama model download fails | Check your internet connection; retry. The model is ~2 GB and only downloads once. |
 | `Unknown provider` error | Use one of the names in the provider table, or add it in `:map_provider_env` inside the `.bat`. |
-| LiteLLM says "missing API key" | Make sure the `provider:` prefix you typed matches the `--model` prefix (e.g. `gemini:` → `gemini/…`). |
+| LiteLLM says "missing API key" | Make sure the `provider:` prefix you typed matches the `--model` prefix (e.g. `gemini:` â†’ `gemini/â€¦`). |
 
 ---
 
-## 🤝 Contributing
+## ðŸ¤ Contributing
 
 Contributions and bug reports are welcome. For larger changes, open an issue first to discuss the approach, then submit a pull request with a concise description of the change.
 
-## 🚨 Security
+## ðŸš¨ Security
 
 Please do not report security or secret-handling concerns in a public issue. Contact the repository maintainer privately.
 
 ---
 
-## 📜 License
+## ðŸ“œ License
 
 See [LICENSE](LICENSE) for details.
 
 <div align="center">
 
-⭐ If this saved you time, consider starring the repo!
+â­ If this saved you time, consider starring the repo!
 
 </div>

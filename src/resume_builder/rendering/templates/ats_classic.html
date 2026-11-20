@@ -16,41 +16,53 @@
   .flag { background: #fff3cd; border-bottom: 1px dashed #b8860b; }
 </style></head><body>
   <h1>{{ r.contact.name.value }}</h1>
-  <div class="contact">
-    {{ r.contact.email.value if r.contact.email else '' }}
-    {% if r.contact.phone %} · {{ r.contact.phone.value }}{% endif %}
-    {% if r.contact.linkedin %} · {{ r.contact.linkedin.value }}{% endif %}
-    {% if r.contact.location %} · {{ r.contact.location.value }}{% endif %}
-  </div>
-  {% if r.summary %}
+  {% set contact_parts = [r.contact.email, r.contact.phone, r.contact.linkedin, r.contact.location]
+       | select | map(attribute='value') | select | list %}
+  <div class="contact">{{ contact_parts | join(' · ') }}</div>
+
+  {% set exp = r.experience | selectattr('included') | list %}
+  {% set projects = r.projects | selectattr('included') | list %}
+  {% set edu = r.education | selectattr('included') | list %}
+  {% set skills = r.skills | map(attribute='value') | select | list %}
+  {% set certs = r.certifications | map(attribute='value') | select | list %}
+
+  {% for section in r.section_order %}
+  {% if section == 'summary' and r.summary and r.summary.value.strip() %}
   <h2>Professional Summary</h2>
-  <p>{{ r.summary.value }}</p>
-  {% endif %}
-  {% if r.experience %}
+  <p class="{{ 'flag' if r.summary.verification_status.value == 'flagged' else '' }}">{{ r.summary.value }}</p>
+  {% elif section == 'experience' and exp %}
   <h2>Work Experience</h2>
-  {% for e in r.experience if e.included %}
+  {% for e in exp %}
   <div class="entry">
     <div class="entry-head"><span>{{ e.title.value }}</span><span>{{ e.start_date.value }} – {{ e.end_date.value }}</span></div>
     <div class="muted">{{ e.company.value }}</div>
-    <ul>{% for b in e.bullets %}<li class="{{ 'flag' if b.verification_status.value == 'flagged' else '' }}">{{ b.value }}</li>{% endfor %}</ul>
+    <ul>{% for b in e.bullets if b.value.strip() %}<li class="{{ 'flag' if b.verification_status.value == 'flagged' else '' }}">{{ b.value }}</li>{% endfor %}</ul>
   </div>
   {% endfor %}
-  {% endif %}
-  {% if r.projects %}
+  {% elif section == 'projects' and projects %}
   <h2>Projects</h2>
-  {% for p in r.projects if p.included %}
+  {% for p in projects %}
   <div class="entry"><div class="entry-head">{{ p.name.value }}</div>
-  <ul>{% for b in p.bullets %}<li>{{ b.value }}</li>{% endfor %}</ul></div>
+  {% if p.description and p.description.value %}<div class="muted">{{ p.description.value }}</div>{% endif %}
+  <ul>{% for b in p.bullets if b.value.strip() %}<li>{{ b.value }}</li>{% endfor %}</ul></div>
   {% endfor %}
-  {% endif %}
-  {% if r.education %}
+  {% elif section == 'education' and edu %}
   <h2>Education</h2>
-  {% for ed in r.education if ed.included %}
-  <div class="entry"><strong>{{ ed.degree.value }}</strong> — {{ ed.institution.value }}</div>
+  {% for ed in edu %}
+  <div class="entry"><strong>{{ ed.degree.value }}</strong>{% if ed.institution.value %} — {{ ed.institution.value }}{% endif %}
+  {% if ed.details %}<ul>{% for d in ed.details if d.value.strip() %}<li>{{ d.value }}</li>{% endfor %}</ul>{% endif %}</div>
   {% endfor %}
-  {% endif %}
-  {% if r.skills %}
+  {% elif section == 'skills' and skills %}
   <h2>Skills</h2>
-  <p>{{ r.skills | map(attribute='value') | join(' · ') }}</p>
+  <p>{{ skills | join(' · ') }}</p>
+  {% elif section == 'certifications' and certs %}
+  <h2>Certifications</h2>
+  <ul>{% for c in certs %}<li>{{ c }}</li>{% endfor %}</ul>
   {% endif %}
+  {% endfor %}
+
+  {% for cs in r.custom_sections if cs.included and cs.items %}
+  <h2>{{ cs.name }}</h2>
+  <ul>{% for it in cs.items if it.value.strip() %}<li>{{ it.value }}</li>{% endfor %}</ul>
+  {% endfor %}
 </body></html>

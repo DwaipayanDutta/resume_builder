@@ -5,7 +5,8 @@ REM
 REM  Keep this file inside the extracted resume_builder folder (next to
 REM  pyproject.toml) and double-click it. Do not run it from inside the zip.
 REM  The window stays open so any error message can be read.
-REM  Choices: 1 local Qwen 2.5 3B, 2 Claude API, 3 any provider, 4 format only
+REM  Choices: 1 local Qwen 2.5 3B, 2 any provider (Claude, Gemini, OpenAI, ...),
+REM           3 format only, 4 web app in the browser (upload TXT, job link, PDF)
 REM =====================================================================
 if defined RB_CHILD goto :start
 set "RB_CHILD=1"
@@ -57,9 +58,9 @@ echo      ####*=##-  =#############-   -------------------------
 echo   :*%%= ####*       ....:*:......  Get started
 echo   =####%%==+++-       +#####*.
 echo    :*####%%=          =%%####+.   ^> 1. tailor-resume (Local Qwen 2.5 3B)
-echo     .*####%%=          =%%####+.     2. tailor-resume (Claude API)
-echo      .*###*.       .####-=%%####*.    3. tailor-resume (Any Provider - Gemini, OpenAI, Groq, ...)
-echo   ....:=%%+:::..   .####:  =%%###-      4. create-resume (Format TXT only)
+echo     .*####%%=          =%%####+.     2. tailor-resume (Any Provider - Claude, Gemini, OpenAI, Groq, ...)
+echo      .*###*.       .####-=%%####*.    3. create-resume (Format TXT only)
+echo   ....:=%%+:::..   .####:  =%%###-      4. resume-studio (Web app - upload TXT, job link, download PDF)
 echo   ############# .*##-.####:   +-
 echo   %%%%%%%%%%%%%.*####=####:
 echo            .*####%%= .####:
@@ -72,13 +73,31 @@ echo.
 REM Using 'choice' for instant selection without pressing Enter
 choice /c 1234 /n /m "^> Select an option (1, 2, 3 or 4): "
 set "CHOICE=%ERRORLEVEL%"
+set "WEB="
 
 if "%CHOICE%"=="1" goto :local
-if "%CHOICE%"=="2" goto :claude
-if "%CHOICE%"=="3" goto :litellm
-if "%CHOICE%"=="4" goto :plain
+if "%CHOICE%"=="2" goto :litellm
+if "%CHOICE%"=="3" goto :plain
+if "%CHOICE%"=="4" goto :webapp
 echo Invalid choice.
 goto :menu
+
+:webapp
+set "WEB=1"
+echo.
+echo ====================================================================
+echo Which AI should the web app use for tailoring?
+echo   1. Local Qwen 2.5 3B - free, private, offline
+echo   2. Any provider - Claude, Gemini, OpenAI, Groq, ...
+echo   3. No AI - format my TXT only
+echo You can still choose "Format only" inside the app at any time.
+echo ====================================================================
+choice /c 123 /n /m "^> Select an option (1, 2 or 3): "
+set "WCHOICE=%ERRORLEVEL%"
+if "%WCHOICE%"=="1" goto :local
+if "%WCHOICE%"=="2" goto :litellm
+if "%WCHOICE%"=="3" goto :plain
+goto :webapp
 
 :local
 set "BACKEND=qwen"
@@ -87,26 +106,18 @@ call :ensure_ollama
 if errorlevel 1 goto :fail
 goto :inputs
 
-:claude
-set "BACKEND=claude"
-if defined ANTHROPIC_API_KEY goto :inputs
-echo.
-echo Your key is used for this run only and is not saved to disk.
-set /p "ANTHROPIC_API_KEY=^> Paste your Anthropic API key: "
-if defined ANTHROPIC_API_KEY goto :inputs
-echo [ERROR] No API key entered.
-goto :fail
-
 :litellm
 set "BACKEND=litellm"
 echo.
 echo ====================================================================
-echo LiteLLM works with 100+ providers. Enter your credentials as
+echo LiteLLM works with 100+ providers, including Claude. Enter your
+echo credentials as
 echo   provider:key
+echo Your key is used for this run only and is not saved to disk.
 echo Examples:
+echo   anthropic:sk-ant-...   (Claude)
 echo   gemini:AIzaSy...
 echo   openai:sk-...
-echo   anthropic:sk-ant-...
 echo   groq:gsk_...
 echo   mistral:...
 echo   openrouter:sk-or-...
@@ -172,9 +183,9 @@ exit /b
 :ask_model
 echo.
 echo Enter the LiteLLM model string. The provider prefix must match.
+echo   Claude   -^> anthropic/claude-sonnet-5-5
 echo   Gemini   -^> gemini/gemini-2.5-flash
 echo   OpenAI   -^> openai/gpt-4o
-echo   Anthropic-^> anthropic/claude-3-5-sonnet-20241022
 echo   Groq     -^> groq/llama-3.3-70b-versatile
 set "MODEL="
 set /p "MODEL=^> Model: "
@@ -183,6 +194,11 @@ if not defined MODEL (
     goto :fail
 )
 set "MODEL_ARG=--model "%MODEL%""
+%PY% -c "import litellm" >nul 2>nul
+if not errorlevel 1 goto :inputs
+echo Installing LiteLLM - first run only...
+%PY% -m pip install --disable-pip-version-check ".[ai]"
+if errorlevel 1 goto :pip_fail
 goto :inputs
 
 :plain
@@ -190,6 +206,7 @@ set "BACKEND="
 goto :inputs
 
 :inputs
+if defined WEB goto :web_start
 echo.
 echo Enter the path to your resume TXT file - drag and drop works.
 echo Press Enter for the default: examples\New Resume.txt
@@ -259,6 +276,77 @@ goto :fail
 echo.
 echo The window was left open so you can read the messages above.
 pause
+exit /b 1
+
+REM =====================================================================
+REM  Web app: install web extras, build the UI if needed, start the server
+REM  and open the browser. API keys stay in this window's environment.
+REM =====================================================================
+:web_start
+set "RESUME_BACKEND=%BACKEND%"
+set "RESUME_MODEL=%MODEL%"
+set "PYTHONPATH=%CD%\src;%PYTHONPATH%"
+echo.
+echo [3/4] Checking web app libraries...
+set "EXTRAS=web"
+if "%BACKEND%"=="litellm" set "EXTRAS=web,ai"
+%PY% -c "import fastapi, uvicorn, multipart, jinja2, httpx, pydantic" >nul 2>nul
+if errorlevel 1 goto :web_pip
+if not "%BACKEND%"=="litellm" goto :web_ui
+%PY% -c "import litellm" >nul 2>nul
+if not errorlevel 1 goto :web_ui
+:web_pip
+echo Installing web app libraries - first run only...
+%PY% -m pip install --disable-pip-version-check ".[%EXTRAS%]"
+if errorlevel 1 goto :pip_fail
+
+:web_ui
+echo Checking the web interface...
+%PY% -m resume_builder.webapp --check-ui "%CD%\web"
+if not errorlevel 1 goto :web_run
+call :ensure_node
+if errorlevel 1 goto :fail
+echo Building the web interface - first run only, takes about a minute...
+pushd web
+call npm install --no-audit --no-fund
+if errorlevel 1 goto :npm_fail
+call npm run build
+if errorlevel 1 goto :npm_fail
+popd
+goto :web_run
+
+:npm_fail
+popd
+echo [ERROR] Building the web interface failed. Read the messages above.
+goto :fail
+
+:web_run
+echo [4/4] Starting Resume Studio. Your browser will open automatically.
+%PY% -m resume_builder.webapp
+set "RC=%ERRORLEVEL%"
+if "%RC%"=="0" exit /b 0
+echo [FAILED] The web app stopped with exit code %RC%.
+goto :fail
+
+REM =====================================================================
+REM  Subroutine: make sure Node.js (npm) is available, install with winget
+REM  No ( ) blocks here: a PATH containing "(x86)" would break them.
+REM =====================================================================
+:ensure_node
+where npm >nul 2>nul && exit /b 0
+if exist "%ProgramFiles%\nodejs\npm.cmd" goto :node_path
+echo Node.js is needed once to build the web interface. Installing it with winget...
+where winget >nul 2>nul
+if errorlevel 1 goto :manual_node
+winget install -e --id OpenJS.NodeJS.LTS --accept-package-agreements --accept-source-agreements
+if exist "%ProgramFiles%\nodejs\npm.cmd" goto :node_path
+goto :manual_node
+:node_path
+set "PATH=%ProgramFiles%\nodejs;%PATH%"
+exit /b 0
+:manual_node
+echo [ERROR] Could not install Node.js automatically.
+echo Install the LTS version from https://nodejs.org then run this file again.
 exit /b 1
 
 REM =====================================================================

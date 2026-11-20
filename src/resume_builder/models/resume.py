@@ -53,6 +53,12 @@ class Education(BaseModel):
     included: bool = True
 
 
+class CustomSection(BaseModel):
+    name: str = ""
+    items: list[VerifiableField] = Field(default_factory=list)
+    included: bool = True
+
+
 class ResumeData(BaseModel):
     contact: ContactInfo = Field(default_factory=ContactInfo)
     summary: Optional[VerifiableField] = None
@@ -61,7 +67,7 @@ class ResumeData(BaseModel):
     education: list[Education] = Field(default_factory=list)
     skills: list[VerifiableField] = Field(default_factory=list)
     certifications: list[VerifiableField] = Field(default_factory=list)
-    custom_sections: list[dict] = Field(default_factory=list)
+    custom_sections: list[CustomSection] = Field(default_factory=list)
     section_order: list[str] = Field(
         default_factory=lambda: [
             "summary", "experience", "projects", "education", "skills", "certifications"

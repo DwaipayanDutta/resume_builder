@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Resume Studio"><title>Resume Studio</title><defs>
+    <linearGradient id="rsg" x1="8" y1="4" x2="48" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#6D28D9"/>
+    </linearGradient>
+    <mask id="rsm" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
+      <rect width="64" height="64" fill="#fff"/>
+      <path d="M50,35.5 Q51.9,43.1 59.5,45 Q51.9,46.9 50,54.5 Q48.1,46.9 40.5,45 Q48.1,43.1 50,35.5 Z" fill="#000" stroke="#000" stroke-width="3.6" stroke-linejoin="round"/>
+    </mask></defs>
+    <g mask="url(#rsm)">
+      <path d="M14 4H36L48 16V54A6 6 0 0 1 42 60H14A6 6 0 0 1 8 54V10A6 6 0 0 1 14 4Z" fill="url(#rsg)"/>
+      <path d="M36 4V12A4 4 0 0 0 40 16H48Z" fill="#DDD6FE" fill-opacity="0.9"/>
+      <path d="M17 46V22H25A6 6 0 0 1 25 34H17M25 34L30 41L41 27" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <path d="M50,35.5 Q51.9,43.1 59.5,45 Q51.9,46.9 50,54.5 Q48.1,46.9 40.5,45 Q48.1,43.1 50,35.5 Z" fill="#2DD4BF"/>
+</svg>

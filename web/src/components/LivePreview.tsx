@@ -3,7 +3,9 @@ import { useResumeStore } from "../store";
 
 export interface PreviewData {
   html: string;
-  pages: number;
+  /** Actual page count from the PDF renderer; null if the PDF engine is unavailable. */
+  pages: number | null;
+  page_count_error?: string | null;
 }
 
 export function LivePreview() {
@@ -12,7 +14,8 @@ export function LivePreview() {
   const setPreviewPages = useResumeStore((s) => s.setPreviewPages);
 
   const [html, setHtml] = useState<string>("");
-  const [pages, setPages] = useState<number>(1);
+  const [pages, setPages] = useState<number | null>(null);
+  const [pageError, setPageError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,9 +55,12 @@ export function LivePreview() {
 
         // Ensure latest edit wins
         if (currentReqId === requestIdRef.current) {
+          const pageCount = typeof data.pages === "number" ? data.pages : null;
+          const pageErr = data.page_count_error ?? null;
           setHtml(data.html);
-          setPages(data.pages);
-          setPreviewPages(data.pages);
+          setPages(pageCount);
+          setPageError(pageErr);
+          setPreviewPages(pageCount, pageErr);
           setLoading(false);
           setError(null);
         }
@@ -74,7 +80,7 @@ export function LivePreview() {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [resume, isLoaded]);
+  }, [resume, isLoaded, setPreviewPages]);
 
   if (!isLoaded) {
     return (
@@ -93,9 +99,14 @@ export function LivePreview() {
           {loading && <span className="preview-badge rendering">Rendering...</span>}
         </div>
         <div className="preview-header-right">
-          <span className={`page-count-badge ${pages > 2 ? "badge-danger" : "badge-info"}`}>
+          <span
+            className={`page-count-badge ${
+              pages === null ? "badge-warn" : pages > 2 ? "badge-danger" : "badge-info"
+            }`}
+            title={pageError ?? undefined}
+          >
             <span className="badge-dot"></span>
-            {pages} {pages === 1 ? "page" : "pages"}
+            {pages === null ? "Page count unavailable" : `${pages} ${pages === 1 ? "page" : "pages"}`}
           </span>
         </div>
       </div>
@@ -107,10 +118,11 @@ export function LivePreview() {
         </div>
       ) : (
         <div className="preview-frame-wrapper">
+          {/* Empty sandbox: no scripts, forms, or same-origin access to the editor. */}
           <iframe
             title="Resume Live Preview"
             srcDoc={html}
-            sandbox="allow-same-origin"
+            sandbox=""
             className="preview-iframe"
           />
         </div>

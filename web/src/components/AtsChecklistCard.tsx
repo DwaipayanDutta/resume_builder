@@ -7,11 +7,16 @@ export function AtsChecklistCard() {
   const targetJobDescription = useResumeStore((s) => s.targetJobDescription);
   const setTargetJobDescription = useResumeStore((s) => s.setTargetJobDescription);
   const previewPages = useResumeStore((s) => s.previewPages);
+  const previewPageError = useResumeStore((s) => s.previewPageError);
 
   const [expanded, setExpanded] = useState<boolean>(true);
   const [filterMissing, setFilterMissing] = useState<boolean>(false);
 
-  const report = evaluateAtsChecklist(resume, targetJobDescription, previewPages);
+  const report = evaluateAtsChecklist(resume, targetJobDescription, previewPages, previewPageError);
+  const pagesLabel =
+    report.pageCount.pages === null
+      ? "? Pages"
+      : `${report.pageCount.pages} ${report.pageCount.pages === 1 ? "Page" : "Pages"}`;
 
   const matchPercentage =
     report.keywords.total > 0
@@ -32,7 +37,7 @@ export function AtsChecklistCard() {
         <div className="ats-quick-stats">
           <span className={`kpi-chip ${report.pageCount.isOptimal ? "kpi-ok" : "kpi-warn"}`}>
             <span className="kpi-dot"></span>
-            {report.pageCount.pages} {report.pageCount.pages === 1 ? "Page" : "Pages"}
+            {pagesLabel}
           </span>
           <span className={`kpi-chip ${report.actionVerbs.isOptimal ? "kpi-ok" : "kpi-info"}`}>
             <span className="kpi-dot"></span>
@@ -68,10 +73,10 @@ export function AtsChecklistCard() {
               data-testid="page-count-check"
             >
               <div className="tile-top">
-                <span className="tile-label">Actual Rendered Pages: {report.pageCount.pages}</span>
+                <span className="tile-label">Actual Rendered Pages: {report.pageCount.pages ?? "unknown"}</span>
                 <span className="tile-status-icon">{report.pageCount.isOptimal ? "✓" : "⚠️"}</span>
               </div>
-              <div className="tile-value">{report.pageCount.pages} / 2 Standard</div>
+              <div className="tile-value">{report.pageCount.pages ?? "?"} / 2 Standard</div>
               <div className="tile-caption">{report.pageCount.message}</div>
             </div>
 

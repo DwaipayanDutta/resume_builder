@@ -10,6 +10,7 @@ from resume_builder.models.resume import (
     Experience,
     Education,
     Project,
+    CustomSection,
 )
 from resume_builder.verification.fact_checker import check_tailored
 
@@ -93,3 +94,13 @@ def test_fact_checker_flags_new_metrics():
     assert checked.experience[0].bullets[0].verification_status == VerificationStatus.VERIFIED
     # The 99% metric does not exist in master, so it must be flagged
     assert checked.experience[0].bullets[1].verification_status == VerificationStatus.FLAGGED
+
+
+def test_custom_sections_are_typed():
+    r = ResumeData.model_validate({
+        "custom_sections": [{"name": "Awards", "items": [{"value": "Best Paper"}]}]
+    })
+    assert isinstance(r.custom_sections[0], CustomSection)
+    assert r.custom_sections[0].items[0].value == "Best Paper"
+    with pytest.raises(ValidationError):
+        ResumeData.model_validate({"custom_sections": [{"name": "X", "items": "nope"}]})

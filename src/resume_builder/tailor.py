@@ -218,6 +218,62 @@ def _jobs(txt_path):
 
 
 # --------------------------------------------------------------------------
+# Reusable pipeline (shared by the CLI and the web API)
+# --------------------------------------------------------------------------
+def make_runner(backend: str, model: str | None = None, api_key: str | None = None,
+                api_base: str | None = None, ollama_host: str | None = None,
+                num_ctx: int = 12288):
+    """Return (run(prompt) -> str, resolved_model). Raises ValueError on bad config."""
+    if backend == "claude":
+        key = api_key or os.environ.get("ANTHROPIC_API_KEY")
+        if not key:
+            raise ValueError("Claude backend needs an API key: set ANTHROPIC_API_KEY or pass --api-key")
+        model = model or DEFAULT_CLAUDE
+        return (lambda p: call_claude(p, model, key)), model
+    if backend == "litellm":
+        if not model:
+            raise ValueError("The litellm backend requires --model, e.g. --model gpt-4o\n"
+                             "See https://docs.litellm.ai/docs/providers for supported model strings.")
+        # api_key None -> LiteLLM reads the provider's env var
+        return (lambda p: call_litellm(p, model, api_key, api_base)), model
+    if backend == "qwen":
+        model = model or DEFAULT_QWEN
+        host = ollama_host or os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+        return (lambda p: call_ollama(p, model, host, num_ctx)), model
+    raise ValueError(f"Unknown backend: {backend}")
+
+
+def tailor_cv_text(run, cv_text: str, job_title: str, company: str, jd_text: str,
+                   emphasis: str = DEFAULT_EMPHASIS, with_report: bool = True,
+                   log=lambda msg: None):
+    """Run the tailoring prompt(s).
+    Returns (tailored_txt, raw_cv, report_or_None). Raises RuntimeError on backend failure."""
+    template = load_template()
+    mk = lambda add: build_prompt(template, job_title, company, jd_text, cv_text, emphasis, add)
+    log("Tailoring CV (this can take several minutes on a local model)...")
+    raw_cv = run(mk(CV_ADDENDUM))
+    report = None
+    if with_report:
+        log("Writing assessment and keyword report...")
+        report = run(mk(REPORT_ADDENDUM))
+    return clean_cv(raw_cv), raw_cv, report
+
+
+def role_warnings(src_txt, tailored_txt) -> list[str]:
+    """Truthfulness guard: employers and dates must not change."""
+    out = []
+    try:
+        before, after = _jobs(src_txt), _jobs(tailored_txt)
+        for company, dates in sorted(before - after):
+            out.append(f"Original role missing or changed: {company} | {dates}")
+        for company, dates in sorted(after - before):
+            out.append(f"New or altered role in output (check it): {company} | {dates}")
+    except Exception:
+        pass
+    return out
+
+
+# --------------------------------------------------------------------------
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="tailor-resume",
                                  description="Tailor a CV to a job with local Qwen, Claude API, or any LiteLLM-supported provider, then build DOCX + PDF.")
@@ -250,41 +306,24 @@ def main(argv=None) -> int:
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
 
-    if args.backend == "claude":
-        key = args.api_key or os.environ.get("ANTHROPIC_API_KEY")
-        if not key:
-            sys.exit("Claude backend needs an API key: set ANTHROPIC_API_KEY or pass --api-key")
-        model = args.model or DEFAULT_CLAUDE
-        run = lambda p: call_claude(p, model, key)
-    elif args.backend == "litellm":
-        if not args.model:
-            sys.exit("The litellm backend requires --model, e.g. --model gpt-4o\n"
-                     "See https://docs.litellm.ai/docs/providers for supported model strings.")
-        model = args.model
-        key = args.api_key  # LiteLLM auto-reads provider env vars when None
-        run = lambda p: call_litellm(p, model, key, args.api_base)
-    else:
-        model = args.model or DEFAULT_QWEN
-        run = lambda p: call_ollama(p, model, args.ollama_host, args.num_ctx)
+    try:
+        run, model = make_runner(args.backend, args.model, args.api_key, args.api_base,
+                                 args.ollama_host, args.num_ctx)
+    except ValueError as e:
+        sys.exit(str(e))
     print(f"Backend: {args.backend} ({model})")
 
-    template = load_template()
-    mk = lambda add: build_prompt(template, args.job_title, args.company, jd_text, cv_text, args.emphasis, add)
-
     try:
-        print("Tailoring CV (this can take several minutes on a local model)...")
-        raw_cv = run(mk(CV_ADDENDUM))
-        raw_path = out / f"{args.basename}_raw.txt"
-        raw_path.write_text(raw_cv, encoding="utf-8")
-
-        if not args.no_report:
-            print("Writing assessment and keyword report...")
-            report = run(mk(REPORT_ADDENDUM))
-            (out / f"{args.basename}_report.md").write_text(report, encoding="utf-8")
+        tailored, raw_cv, report = tailor_cv_text(
+            run, cv_text, args.job_title, args.company, jd_text, args.emphasis,
+            with_report=not args.no_report, log=print)
     except RuntimeError as e:
         sys.exit(f"ERROR: {e}")
+    raw_path = out / f"{args.basename}_raw.txt"
+    raw_path.write_text(raw_cv, encoding="utf-8")
+    if report is not None:
+        (out / f"{args.basename}_report.md").write_text(report, encoding="utf-8")
 
-    tailored = clean_cv(raw_cv)
     txt_path = out / f"{args.basename}.txt"
     txt_path.write_text(tailored, encoding="utf-8")
 
@@ -293,15 +332,8 @@ def main(argv=None) -> int:
         sys.exit(f"ERROR: the model's CV did not follow the required layout (no job blocks found).\n"
                  f"Raw output: {raw_path}\nTry again, edit {txt_path}, or use --backend claude / --backend litellm.")
 
-    # truthfulness guard: employers and dates must not change
-    try:
-        before, after = _jobs(src), _jobs(txt_path)
-        for company, dates in sorted(before - after):
-            print(f"WARNING: original role missing or changed: {company} | {dates}")
-        for company, dates in sorted(after - before):
-            print(f"WARNING: new or altered role in output (check it): {company} | {dates}")
-    except Exception:
-        pass
+    for w in role_warnings(src, txt_path):
+        print(f"WARNING: {w}")
     n = tailored.count("[ADD METRIC]")
     if n:
         print(f"NOTE: {n} [ADD METRIC] placeholder(s) in the CV - fill in real numbers or delete them.")

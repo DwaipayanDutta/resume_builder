@@ -35,12 +35,6 @@ export function EditorLayout() {
     <div className="editor-root">
       <header className="editor-toolbar">
         <div className="toolbar-left">
-          <div className="brand-badge">
-            <span className="brand-icon">📄</span>
-            <span className="app-brand">Resume Studio</span>
-            <span className="brand-tag">PRO</span>
-          </div>
-
           <div className="history-buttons">
             <button
               type="button"
