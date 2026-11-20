@@ -1,3 +1,4 @@
+import os
 import base64
 import tempfile
 from pathlib import Path
@@ -227,7 +228,27 @@ def test_build_litellm_claude_model_disclosure():
 
 def test_hosted_mode_hides_local_ollama_and_adjusts_disclosure(monkeypatch):
     monkeypatch.setenv("RESUME_HOSTED", "1")
-    ids = [b["id"] for b in client.get("/api/studio/config").json()["backends"]]
-    assert ids == ["litellm"]
+    with patch.object(studio, "_litellm_installed", return_value=False):
+        ids = [b["id"] for b in client.get("/api/studio/config").json()["backends"]]
+    assert ids == ["claude"]  # no local Ollama, no LiteLLM in the slim hosted build
+    with patch.object(studio, "_litellm_installed", return_value=True):
+        ids = [b["id"] for b in client.get("/api/studio/config").json()["backends"]]
+    assert ids == ["claude", "litellm"]
     body = client.post("/api/studio/build", files=_upload(), data={"mode": "format"}).json()
     assert "not stored on the server" in body["disclosure"]
+
+
+def test_hosted_default_backend_claude(monkeypatch):
+    monkeypatch.setenv("VERCEL", "1")
+    monkeypatch.setenv("RESUME_DB_PATH", os.environ.get("RESUME_DB_PATH", ""))
+    monkeypatch.setenv("RESUME_BACKEND", "claude")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    data = client.get("/api/studio/config").json()
+    assert data["default_backend"] == "claude"
+    assert data["backends"][0]["configured"] is True
+
+
+def test_requirements_stay_under_vercel_limit():
+    reqs = (Path(__file__).resolve().parents[1] / "requirements.txt").read_text(encoding="utf-8")
+    names = [l.split(">")[0].split("[")[0].strip().lower() for l in reqs.splitlines() if l and not l.startswith("#")]
+    assert "litellm" not in names  # ~130 MB on its own; pushes the function past 250 MB

@@ -1,5 +1,7 @@
 # Python dependencies for the hosted web app (used by Vercel for api/index.py).
 # For local installs use pyproject.toml instead: pip install ".[web]"
+# LiteLLM is deliberately left out: it needs ~130 MB of Vercel's 250 MB function limit.
+# The hosted site calls Claude directly over HTTPS instead (no extra package needed).
 fastapi>=0.110
 pydantic>=2.0
 jinja2>=3.1
@@ -10,4 +12,3 @@ reportlab>=4.0
 pypdf>=4.0
 mammoth>=1.8
 psycopg[binary]>=3.1
-litellm>=1.0.0

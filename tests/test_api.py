@@ -383,3 +383,21 @@ def test_render_docx_includes_all_sections(sample_resume):
 def test_render_rejects_invalid_payload():
     res = client.post("/api/render/pdf", json={"experience": [{"bullets": "not-a-list"}]})
     assert res.status_code == 422
+
+
+def test_claude_backend_works_without_sdk(monkeypatch):
+    """The slim hosted build has no `anthropic` package: ClaudeBackend falls back to HTTPS."""
+    import builtins
+    from resume_builder.ai.backends import ClaudeBackend
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    real_import = builtins.__import__
+
+    def no_anthropic(name, *a, **k):
+        if name == "anthropic":
+            raise ImportError("not installed")
+        return real_import(name, *a, **k)
+
+    monkeypatch.setattr(builtins, "__import__", no_anthropic)
+    with patch("resume_builder.tailor.call_claude", return_value="ok via https") as call:
+        assert ClaudeBackend(model="claude-x").complete("hi") == "ok via https"
+    assert call.call_args.args[:3] == ("hi", "claude-x", "sk-test")

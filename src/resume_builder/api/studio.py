@@ -89,9 +89,22 @@ def is_hosted() -> bool:
     return bool(os.environ.get("VERCEL") or os.environ.get("RESUME_HOSTED"))
 
 
+def _litellm_installed() -> bool:
+    import importlib.util
+    return importlib.util.find_spec("litellm") is not None
+
+
 def listed_backends() -> tuple[str, ...]:
-    # Local Ollama (qwen) can't be reached from a hosted server, so it isn't offered there.
-    return tuple(b for b in LISTED_BACKENDS if not (is_hosted() and b == "qwen"))
+    """AI options offered in the Dashboard.
+
+    Local: Qwen via Ollama, and any provider via LiteLLM.
+    Hosted: local Ollama can't be reached, and LiteLLM is too large for a Vercel function
+    (its install is ~130 MB of the 250 MB limit), so Claude is called directly over HTTPS;
+    LiteLLM is still offered if a host happens to have it installed.
+    """
+    if not is_hosted():
+        return LISTED_BACKENDS
+    return ("claude", "litellm") if _litellm_installed() else ("claude",)
 
 
 @router.get("/config", response_model=StudioConfig)

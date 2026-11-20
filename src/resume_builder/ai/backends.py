@@ -31,14 +31,17 @@ class ClaudeBackend:
             raise RuntimeError("Claude backend requires ANTHROPIC_API_KEY environment variable")
         try:
             import anthropic
+        except ImportError:
+            # No SDK installed (e.g. the slim Vercel build): call the API directly over HTTPS.
+            from ..tailor import call_claude
+            return call_claude(prompt, self.model, api_key, max_tokens=4096)
+        try:
             client = anthropic.Anthropic(api_key=api_key)
             msg = client.messages.create(
                 model=self.model, max_tokens=4096,
                 messages=[{"role": "user", "content": prompt}],
             )
             return msg.content[0].text
-        except ImportError:
-            raise RuntimeError("Claude backend requires 'anthropic' package. Install it or use litellm.")
         except Exception as e:
             raise RuntimeError(f"Claude API call failed: {e}")
 

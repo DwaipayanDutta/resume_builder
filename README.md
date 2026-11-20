@@ -349,7 +349,7 @@ npm run build
 
 The live app runs at **[resume-studio-in.vercel.app](https://resume-studio-in.vercel.app)**. The repo is ready for Vercel:
 `vercel.json` builds the web UI as static files and runs the FastAPI backend as a Python function
-(`api/index.py`, dependencies in `requirements.txt`).
+(`api/index.py`, dependencies in `requirements.txt`, about 65 MB of Vercel's 250 MB function limit).
 
 **One-time setup (about 5 minutes):**
 
@@ -360,9 +360,9 @@ The live app runs at **[resume-studio-in.vercel.app](https://resume-studio-in.ve
 3. Accounts need a database: open the project's **Storage** tab, add a **Neon (Postgres)**
    database and connect it to the project. This sets `DATABASE_URL` automatically. Then
    **Redeploy**. Until this is done, registering shows a message asking for the database.
-4. Optional, AI tailoring: under **Settings → Environment Variables** add `RESUME_BACKEND=litellm`,
-   `RESUME_MODEL` (e.g. `anthropic/claude-sonnet-5-5`) and the provider key (e.g.
-   `ANTHROPIC_API_KEY`), then redeploy. Without a key the site works in **Format only** mode.
+4. Optional, AI tailoring: under **Settings → Environment Variables** add `ANTHROPIC_API_KEY`
+   and `RESUME_BACKEND=claude` (optionally `RESUME_MODEL`, default `claude-sonnet-5-5`), then
+   redeploy. Without a key the site works in **Format only** mode.
 
 > ⚠️ **AI costs:** anyone who registers on the public site can use the AI key you configure, and
 > the provider bills you. Set a spending limit with your AI provider before adding a key.
@@ -375,7 +375,7 @@ The live app runs at **[resume-studio-in.vercel.app](https://resume-studio-in.ve
 | Feature | Local (`run_resume.bat`) | Vercel |
 |---------|--------------------------|--------|
 | Dashboard: upload TXT, job link, PDF/Word download | ✅ | ✅ |
-| AI tailoring | Local Qwen, or any provider | Any provider via your key |
+| AI tailoring | Local Qwen, or any provider via LiteLLM | Claude via your key (LiteLLM is too large for a Vercel function) |
 | Accounts | SQLite file on your computer | Postgres (Neon) |
 | Guided editor PDF export / page count | ✅ with WeasyPrint + Pango | ❌ (needs native libraries); use the Dashboard for PDFs |
 | Long AI runs | No limit | Up to 300 s per request (`maxDuration` in `vercel.json`) |
